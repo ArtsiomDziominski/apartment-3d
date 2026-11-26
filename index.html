@@ -74,6 +74,7 @@ body.shot .cap small{display:block;font:500 16px/1.4 var(--f-ui);color:var(--mut
 const SHOT = location.hash.indexOf('#shot-') === 0;
 if (SHOT) document.body.classList.add('shot');
 const $ = id => document.getElementById(id);
+const vw=()=>Math.max(1,window.innerWidth||document.documentElement.clientWidth||1), vh=()=>Math.max(1,window.innerHeight||document.documentElement.clientHeight||1);
 const CEIL = 2.7, CUT = 1.2, EYE = 1.6, PR = 0.2;
 const reduced = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
 const coarse = window.matchMedia && matchMedia('(pointer: coarse)').matches;
@@ -87,13 +88,13 @@ try {
   return;
 }
 R.setPixelRatio(SHOT ? 1 : Math.min(window.devicePixelRatio || 1, 2));
-R.setSize(innerWidth, innerHeight);
+R.setSize(vw(), vh());
 R.outputEncoding = THREE.sRGBEncoding;
 R.toneMapping = THREE.ACESFilmicToneMapping; R.toneMappingExposure = 0.82;
 R.shadowMap.enabled = true; R.shadowMap.type = THREE.PCFSoftShadowMap; R.shadowMap.autoUpdate = false;
 $('stage').appendChild(R.domElement);
 const S = new THREE.Scene();
-const cam = new THREE.PerspectiveCamera(60, innerWidth/innerHeight, 0.05, 400);
+const cam = new THREE.PerspectiveCamera(60, vw()/vh(), 0.05, 400);
 
 // ---------- textures
 let seed = 11; const rnd = () => { seed = (seed*16807) % 2147483647; return (seed-1)/2147483646; };
@@ -418,7 +419,7 @@ const st={mode:'over',cut:true,o:Object.assign({},VIEWS.obzor.o),pos:{x:1.1,z:5.
 let dirty=true, anim=null, sceneBg=new THREE.Color('#E4DDD2');
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 function readBg(){const v=getComputedStyle(document.documentElement).getPropertyValue('--scene').trim();if(v)sceneBg=new THREE.Color(v);applyVisuals();}
-function walkFov(){const a=innerWidth/innerHeight;if(st.wf&&a>=1.2)return st.wf;return a<1?82:a<1.4?70:62;}
+function walkFov(){const a=vw()/vh();if(st.wf&&a>=1.2)return st.wf;return a<1?82:a<1.4?70:62;}
 function applyVisuals(){const over=st.mode==='over';
   groups.ceil.visible=!over;groups.outdoor.visible=!over;groups.capTop.visible=over&&!st.cut;groups.capCut.visible=over&&st.cut;groups.hung.visible=!(over&&st.cut);
   R.localClippingEnabled=over&&st.cut;S.background=over?sceneBg:null;R.shadowMap.needsUpdate=true;
@@ -429,9 +430,9 @@ function applyVisuals(){const over=st.mode==='over';
       :'Тяните мышью — осмотреться · W A S D или стрелки — идти · Shift — быстрее · нажмите на пол — перейти туда, на дверь — открыть или закрыть');
   labelEls.forEach(e=>e.hidden=!over);dirty=true;}
 function placeCamera(){
-  if(st.mode==='over'){const o=st.o,D=o.dist*Math.max(1,Math.pow(1.3*innerHeight/innerWidth,0.75));cam.fov=40;cam.position.set(o.tx+D*Math.sin(o.phi)*Math.sin(o.theta),D*Math.cos(o.phi)+0.3,o.tz+D*Math.sin(o.phi)*Math.cos(o.theta));cam.up.set(0,1,0);cam.lookAt(o.tx,0.3,o.tz);}
+  if(st.mode==='over'){const o=st.o,D=o.dist*Math.max(1,Math.pow(1.3*vh()/vw(),0.75));cam.fov=40;cam.position.set(o.tx+D*Math.sin(o.phi)*Math.sin(o.theta),D*Math.cos(o.phi)+0.3,o.tz+D*Math.sin(o.phi)*Math.cos(o.theta));cam.up.set(0,1,0);cam.lookAt(o.tx,0.3,o.tz);}
   else{cam.fov=walkFov();cam.position.set(st.pos.x,EYE,st.pos.z);const cp=Math.cos(st.pitch);cam.lookAt(st.pos.x+Math.sin(st.yaw)*cp,EYE+Math.sin(st.pitch),st.pos.z-Math.cos(st.yaw)*cp);}
-  cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix();}
+  cam.aspect=vw()/vh();cam.updateProjectionMatrix();}
 function setView(name,animate){const v=VIEWS[name];if(!v)return;st.current=name;st.target=null;st.wf=v.fov||null;
   const ds=Object.assign({bed:1,bath:1},v.doors||{});for(const k in ds){doors[k].goal=ds[k];setDoor(k,ds[k]);}R.shadowMap.needsUpdate=true;
   const fromP=cam.position.clone(),fromQ=cam.quaternion.clone(),fromF=cam.fov,wasOver=st.mode==='over';
@@ -463,14 +464,14 @@ const labelEls=LABELS.map(([t])=>{const e=document.createElement('div');e.classN
 const tmpV=new THREE.Vector3();
 function placeLabels(){if(st.mode!=='over'||anim)return labelEls.forEach(e=>e.hidden=true);
   LABELS.forEach(([,x,y,z],i)=>{tmpV.set(x,y,z).project(cam);const e=labelEls[i];if(tmpV.z>1){e.hidden=true;return;}e.hidden=false;
-    e.style.transform=`translate(${((tmpV.x+1)/2*innerWidth).toFixed(1)}px,${((1-tmpV.y)/2*innerHeight).toFixed(1)}px) translate(-50%,-50%)`;});}
+    e.style.transform=`translate(${((tmpV.x+1)/2*vw()).toFixed(1)}px,${((1-tmpV.y)/2*vh()).toFixed(1)}px) translate(-50%,-50%)`;});}
 
 // ---------- input
 const el=R.domElement;el.tabIndex=0;el.setAttribute('aria-label','3D-модель квартиры');
 const ptrs=new Map();let drag=null,pinch=null;
 const ray=new THREE.Raycaster(),ndc=new THREE.Vector2();
 function visibleChain(o){for(;o;o=o.parent)if(!o.visible)return false;return true;}
-function pick(cx,cy){ndc.set(cx/innerWidth*2-1,-(cy/innerHeight)*2+1);ray.setFromCamera(ndc,cam);
+function pick(cx,cy){ndc.set(cx/vw()*2-1,-(cy/vh())*2+1);ray.setFromCamera(ndc,cam);
   for(const h of ray.intersectObjects(S.children,true)){if(!visibleChain(h.object))continue;
     const m=h.object.material;if(R.localClippingEnabled&&m&&m.clippingPlanes&&m.clippingPlanes.length&&h.point.y>CUT)continue;
     if(groups.outdoor.visible&&visibleChain(h.object)&&isOutdoor(h.object))return null;return h;}return null;}
@@ -512,7 +513,7 @@ addEventListener('keydown',e=>{if(e.target&&e.target.tagName==='BUTTON'&&(e.code
   st.keys[k]=true;dirty=true;});
 addEventListener('keyup',e=>{const k=KEYS[e.code];if(e.key==='Shift')st.keys.run=false;if(k)st.keys[k]=false;});
 addEventListener('blur',()=>{st.keys={};});
-addEventListener('resize',()=>{R.setSize(innerWidth,innerHeight);if(!anim)placeCamera();if(SHOT){R.shadowMap.needsUpdate=true;R.render(S,cam);placeLabels();}else dirty=true;});
+addEventListener('resize',()=>{R.setSize(vw(),vh());if(!anim)placeCamera();if(SHOT){R.shadowMap.needsUpdate=true;R.render(S,cam);placeLabels();}else dirty=true;});
 
 // ---------- UI
 CHIPS.forEach(([k,t])=>{const b=document.createElement('button');b.type='button';b.textContent=t;b.dataset.v=k;b.id='v-'+k;
@@ -528,7 +529,7 @@ new MutationObserver(readBg).observe(document.documentElement,{attributes:true,a
 
 // ---------- loop
 let last=performance.now();
-function frame(now){const dt=Math.min(0.05,(now-last)/1000);last=now;
+function frame(now){if(!SHOT)requestAnimationFrame(frame);const dt=Math.min(0.05,(now-last)/1000);last=now;
   for(const k in doors){const d=doors[k];if(d.t!==d.goal){const sp=dt/0.6;setDoor(k,d.goal>d.t?Math.min(d.goal,d.t+sp):Math.max(d.goal,d.t-sp));R.shadowMap.needsUpdate=true;dirty=true;}}
   if(anim){const t=clamp((now-anim.t0)/anim.dur,0,1),e=t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
     cam.position.lerpVectors(anim.fromP,anim.toP,e);cam.quaternion.copy(anim.fromQ).slerp(anim.toQ,e);cam.fov=anim.fromF+(anim.toF-anim.fromF)*e;cam.updateProjectionMatrix();
@@ -543,8 +544,7 @@ function frame(now){const dt=Math.min(0.05,(now-last)/1000);last=now;
       dirty=true;}
     if(dirty)placeCamera();}
   else{const k=st.keys;const tr=(k.tr?1:0)-(k.tl?1:0),z=(k.b?1:0)-(k.f?1:0);if(tr||z){st.o.theta-=tr*1.2*dt;st.o.dist=clamp(st.o.dist*Math.exp(z*dt*1.2),3,28);dirty=true;}if(dirty)placeCamera();}
-  if(dirty){R.render(S,cam);placeLabels();dirty=false;}
-  if(!SHOT)requestAnimationFrame(frame);}
+  if(dirty){dirty=false;try{R.render(S,cam);placeLabels();}catch(err){console.warn(err);}}}
 
 // ---------- start
 readBg();
