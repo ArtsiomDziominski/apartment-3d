@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Где будут розетки в квартире 36,73 м², на какой высоте, и какие линии в щитке.">
+<title>Электрика · розетки</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@600;700&display=swap">
+<style>
+:root{
+  --bg:#ECE6DD; --card:#FBF8F3; --fg:#2E2C29; --muted:#6B665E; --accent:#B5562F; --line:rgba(46,44,41,.14); --shadow:rgba(46,44,41,.10);
+  --f-display:'Montserrat','Segoe UI',Arial,sans-serif; --f-ui:'Inter','Segoe UI',Arial,sans-serif; color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#1C1B19;--card:#262420;--fg:#F2EDE6;--muted:#B4AB9E;--accent:#E3804F;--line:rgba(242,237,230,.16);--shadow:rgba(0,0,0,.35);color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#1C1B19;--card:#262420;--fg:#F2EDE6;--muted:#B4AB9E;--accent:#E3804F;--line:rgba(242,237,230,.16);--shadow:rgba(0,0,0,.35);color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:400 15px/1.5 var(--f-ui);-webkit-font-smoothing:antialiased}
+main{max-width:1072px;margin:0 auto;padding:36px 16px 48px}
+h1{font:700 clamp(28px,5vw,40px)/1.15 var(--f-display);margin:0 0 8px;letter-spacing:-.01em}
+.lead{margin:0 0 26px;color:var(--muted);max-width:62ch}
+a:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:6px}
+.back{display:inline-block;margin:0 0 14px;font:500 14px/1.3 var(--f-ui);color:var(--muted);text-decoration:none}.back:hover{color:var(--accent)}
+.tabs{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 8px}
+.tabs a{display:inline-block;padding:9px 15px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--fg);text-decoration:none;font-weight:500;font-size:14px}
+.tabs a:hover{border-color:var(--accent);color:var(--accent)}
+section{margin-top:28px;scroll-margin-top:12px}
+section h2{font:700 20px/1.3 var(--f-display);margin:0 0 4px}
+section p{margin:0 0 12px;color:var(--muted);font-size:14px}
+.board{display:block;max-width:1080px;border-radius:12px;overflow:hidden;border:1px solid var(--line);box-shadow:0 4px 18px var(--shadow)}
+.board img{display:block;width:100%;height:auto}
+</style>
+</head>
+<body>
+<main>
+<a class="back" href="./">← Меню</a>
+<h1>Электрика</h1>
+<p class="lead">27 розеток, 3 вывода под технику и щиток в шкафу прихожей. Номера на плане и на развёртках стен совпадают. Нажмите на картинку, чтобы открыть её в полном размере.</p>
+<nav class="tabs" aria-label="Разделы"><a href="#plan">План розеток</a><a href="#steny">Розетки на стенах</a><a href="3d.html#obzor">3D-модель</a></nav>
+<section id="plan"><h2>Где будут розетки</h2><p>На значке — номер точки, в плашке — сколько розеток в блоке и высота от пола в сантиметрах.</p>
+<a class="board" href="electric/rozetki.png"><img src="electric/rozetki.png" width="1080" height="2030" alt="План квартиры с розетками: номер точки, число розеток в блоке и высота от пола; ниже таблица по комнатам и линии в щитке" decoding="async"></a></section>
+<section id="steny"><h2>Розетки на стенах</h2><p>Развёртки стен, вид из комнаты. Размеры в миллиметрах: высота от чистого пола до центра и расстояние от угла.</p>
+<a class="board" href="electric/steny.png"><img src="electric/steny.png" width="1080" height="2216" alt="Развёртки девяти стен с розетками, мебелью и размерами в миллиметрах" loading="lazy" decoding="async"></a></section>
+</main>
+</body>
+</html>
