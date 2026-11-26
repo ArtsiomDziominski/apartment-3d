@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="description" content="3D-модель квартиры, вариант планировки 1Г: обзор сверху и прогулка по комнатам.">
-<title>Квартира 1Г в 3D</title>
+<meta name="description" content="3D-модель квартиры: обзор сверху и прогулка по комнатам.">
+<title>Квартира в 3D</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@600;700&display=swap">
 <style>
 [hidden]{display:none!important}
@@ -54,7 +54,7 @@ body.shot .cap small{display:block;font:500 16px/1.4 var(--f-ui);color:var(--mut
 <div id="stage"></div>
 <div id="labels" aria-hidden="true"></div>
 <header class="card">
-  <h1>Квартира · вариант 1Г</h1>
+  <h1>Квартира в 3D</h1>
   <p class="view" id="viewName">Обзор сверху</p>
   <p class="hint" id="hint"></p>
 </header>
@@ -521,9 +521,9 @@ CHIPS.forEach(([k,t])=>{const b=document.createElement('button');b.type='button'
 function go(k){if(location.hash.slice(1)===k)setView(k,true);else location.hash=k;}
 $('mOver').addEventListener('click',()=>{if(st.mode!=='over')go('obzor');});
 $('mWalk').addEventListener('click',()=>{if(st.mode!=='walk')go('vhod');});
-$('cutBtn').addEventListener('click',()=>{st.cut=!st.cut;try{localStorage.setItem('cut1g',st.cut?'1':'0');}catch(_){}applyVisuals();});
+$('cutBtn').addEventListener('click',()=>{st.cut=!st.cut;try{localStorage.setItem('cut3d',st.cut?'1':'0');}catch(_){}applyVisuals();});
 addEventListener('hashchange',()=>{const k=location.hash.slice(1);if(VIEWS[k])setView(k,true);});
-try{const c=localStorage.getItem('cut1g');if(c==='0')st.cut=false;}catch(_){}
+try{const c=localStorage.getItem('cut3d');if(c==='0')st.cut=false;}catch(_){}
 const mq=window.matchMedia&&matchMedia('(prefers-color-scheme: dark)');if(mq&&mq.addEventListener)mq.addEventListener('change',readBg);
 new MutationObserver(readBg).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
 
