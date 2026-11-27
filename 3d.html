@@ -94,6 +94,7 @@ if (SHOT) document.body.classList.add('shot');
 const $ = id => document.getElementById(id);
 const vw=()=>Math.max(1,window.innerWidth||document.documentElement.clientWidth||1), vh=()=>Math.max(1,window.innerHeight||document.documentElement.clientHeight||1);
 const CEIL = 2.7, CUT = 1.2, EYE = 1.6, PR = 0.2;
+const TOPC = 2.6;   // every cabinet tops out here; above it a 10 cm filler in the front colour runs to the stretch ceiling, whose profile is fixed to it
 const reduced = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
 const coarse = window.matchMedia && matchMedia('(pointer: coarse)').matches;
 
@@ -289,7 +290,7 @@ function sdoor(key,x1,x2,y1,y2,zf,right,max=1.5){
 // wardrobe door on the face x0 (facing +x), from z1 to z2, hinged at z1 (low) or z2
 function swing(key,x0,z1,z2,low,m,max=1.65){const w=z2-z1,s=low?1:-1,g=new THREE.Group();g.position.set(x0,0,low?z1:z2);S.add(g);
   const add=(a,b,c,d,e,f,mm)=>{box(a,b,c,d,e,f,mm,{p:g}).userData.flap=key;};
-  add(0,0.02,0.02,2.38,low?0.002:-w+0.002,low?w-0.002:-0.002,m);
+  add(0,0.02,0.02,TOPC-0.02,low?0.002:-w+0.002,low?w-0.002:-0.002,m);
   const fz=s*(w-0.04);add(0.02,0.032,0.95,1.35,fz-0.006,fz+0.006,mat.black);
   flaps[key]={g,t:0,goal:0,max,axis:'y',sign:s};}
 function setFlap(k,t){const f=flaps[k];f.t=t;if(f.slide)f.g.position[f.ax||'z']=-f.max*t;else f.g.rotation[f.axis]=f.sign*f.max*t;}
@@ -307,9 +308,9 @@ function xcarc(x1,x2,y1,y2,z1,z2,m=mat.wardC){const t=0.018;
 // wardrobe interior facing +x: sections [z1,z2,'hang'|'shelf'], partitions between them, a plinth; clothes on the rail, folded stacks on shelves
 function wardIn(x1,x2,sec,seed){let sd=seed;const r=()=>{sd=(sd*16807)%2147483647;return (sd-1)/2147483646;},c=mat.wardC,t=0.018;
   const cols=['#5d6b7b','#c9b28f','#e8e2d8','#8a4f3c','#3b3d42','#a9b8c4','#d9cdb7','#6f7d60','#b8714f','#f3efe8'];
-  const z1=sec[0][0],z2=sec[sec.length-1][1];xcarc(x1,x2,0,2.4,z1,z2);box(x2-0.07,x2-0.05,0.018,0.062,z1+t,z2-t,mat.plinth,{cast:false});box(x1+t,x2-0.002,0.062,0.08,z1+t,z2-t,c);
-  sec.forEach(([a,b,kind],i)=>{if(i)box(x1+t,x2-0.002,0.08,2.382,a-t/2,a+t/2,c);const za=a+(i?t/2:t),zb=b-(i<sec.length-1?t/2:t);
-    if(kind==='hang'){box(x1+t,x2-0.002,2.05,2.068,za,zb,c);cyl((x1+x2)/2,1.97,(za+zb)/2,0.012,zb-za,mat.chrome,{rx:Math.PI/2,seg:10});
+  const z1=sec[0][0],z2=sec[sec.length-1][1];xcarc(x1,x2,0,TOPC,z1,z2);box(x2-0.07,x2-0.05,0.018,0.062,z1+t,z2-t,mat.plinth,{cast:false});box(x1+t,x2-0.002,0.062,0.08,z1+t,z2-t,c);
+  sec.forEach(([a,b,kind],i)=>{if(i)box(x1+t,x2-0.002,0.08,TOPC-t,a-t/2,a+t/2,c);const za=a+(i?t/2:t),zb=b-(i<sec.length-1?t/2:t);
+    if(kind==='hang'){box(x1+t,x2-0.002,2.05,2.068,za,zb,c);box(x1+t,x2-0.002,2.33,2.348,za,zb,c);cyl((x1+x2)/2,1.97,(za+zb)/2,0.012,zb-za,mat.chrome,{rx:Math.PI/2,seg:10});
       [[2.2,0.25],[2.25,0.2]].forEach(([y,h])=>box(x1+0.06,x1+0.3+r()*0.15,2.068,2.068+h*(0.6+r()*0.4),za+0.04+r()*0.05,za+0.3+r()*0.08,M(cols[Math.floor(r()*cols.length)],0.9)));
       let z=za+0.05;while(z<zb-0.08){const th=0.025+r()*0.035,h=0.55+r()*0.5,col=M(cols[Math.floor(r()*cols.length)],0.92);
         box(x1+0.07,x2-0.07,1.94-h,1.94,z,z+th,col);cyl((x1+x2)/2,1.955,z+th/2,0.004,0.03,mat.chrome,{seg:6});z+=th+0.012+r()*0.025;}
@@ -324,7 +325,8 @@ wardIn(0,0.58,[[3.0,3.9,'hang'],[3.9,4.8,'shelf']],5);
 box(0.018,0.13,1.88,2.04,4.45,4.72,M('#e9e9e6',0.5));box(0.13,0.134,1.9,2.02,4.47,4.7,M('#c9cdd0',0.4));
 {const mir=mat.mirror.clone();mir.clippingPlanes=null;
  [[3.0,3.45,1],[3.45,3.9,0],[3.9,4.35,1],[4.35,4.8,0]].forEach(([a,b,l],i)=>swing('pd'+i,0.58,a,b,l,i===2?mir:mat.ward));}
-box(0,0.6,2.4,CEIL,3.0,5.5,mat.wall);block(0,0.6,3.0,5.5);
+// filler over the wardrobe and the niche, flush with the doors
+box(0,0.6,TOPC,CEIL,3.0,5.5,mat.ward,{p:groups.hung});block(0,0.6,3.0,5.5);
 // open niche by the entrance, 70 cm: low cabinet to sit on, coat hooks, cabinet on top
 box(0,0.56,0,0.06,4.82,5.48,mat.plinth);xcarc(0,0.58,0.06,0.48,4.8,5.5);box(0.018,0.56,0.22,0.238,4.818,5.482,mat.wardC);box(0,0.6,0.48,0.5,4.8,5.5,mat.oak);
 {const sh=[M('#3b3d42',0.6),M('#8a4f3c',0.7),M('#e8e2d8',0.8),M('#5d6b7b',0.7)];
@@ -335,8 +337,8 @@ box(0,0.02,0.5,1.9,4.8,5.5,mat.oak);
 box(0.04,0.2,0.86,1.63,4.99,5.19,M('#5d6b7b',0.95));box(0.06,0.2,1.56,1.645,5.04,5.14,M('#4f5c6a',0.95));
 box(0.05,0.13,1.2,1.62,5.33,5.43,M('#8a4f3c',0.9));
 box(0.03,0.19,0.5,0.62,5.25,5.42,M('#e8e2d8',0.9));
-xcarc(0,0.58,1.9,2.4,4.8,5.5);box(0.05,0.45,1.918,2.1,4.84,5.12,M('#cbb89c',0.9));box(0.08,0.5,1.918,2.04,5.2,5.46,M('#8a9aa6',0.9));
-xdoor('na0',0.58,4.8,5.15,1.902,2.398,true,1.99);xdoor('na1',0.58,5.15,5.5,1.902,2.398,false,1.99,1.25);
+xcarc(0,0.58,1.9,TOPC,4.8,5.5);box(0.05,0.45,1.918,2.1,4.84,5.12,M('#cbb89c',0.9));box(0.08,0.5,1.918,2.04,5.2,5.46,M('#8a9aa6',0.9));
+xdoor('na0',0.58,4.8,5.15,1.902,TOPC-0.002,true,1.99);xdoor('na1',0.58,5.15,5.5,1.902,TOPC-0.002,false,1.99,1.25);
 
 // ---------- living room
 box(0.03,0.93,0.05,0.42,0.42,2.36,mat.sofa);box(0,0.24,0.05,0.88,0.39,2.39,mat.sofaD);
@@ -373,8 +375,22 @@ box(3.41,3.44,0.85,1.55,0.78,2.0,mat.tv,{p:groups.hung});box(3.44,3.48,1.16,1.36
 cyl(3.3,0.58,0.85,0.05,0.22,M('#c9b8a2',0.6));box(3.18,3.42,0.47,0.55,1.75,1.95,M('#7d6a5a',0.8));
 cyl(3.2,0.19,0.3,0.16,0.38,mat.pot,{rt:0.19});sph(3.2,0.75,0.3,0.24,0.38,0.24,mat.green);sph(3.12,1.0,0.25,0.16,0.22,0.16,mat.greenD);
 blockCircle(3.2,0.3,0.2);
-lampHit(cyl(0.3,0.01,2.68,0.15,0.02,mat.black),'floor');lampHit(cyl(0.3,0.8,2.68,0.012,1.58,mat.black,{seg:12}),'floor');lampHit(cyl(0.3,1.55,2.68,0.2,0.26,lampMat('floor',mat.shade),{rt:0.15,open:true}),'floor');
-blockCircle(0.3,2.68,0.16);
+lampHit(cyl(0.3,0.01,0.21,0.15,0.02,mat.black),'floor');lampHit(cyl(0.3,0.8,0.21,0.012,1.58,mat.black,{seg:12}),'floor');lampHit(cyl(0.3,1.55,0.21,0.2,0.26,lampMat('floor',mat.shade),{rt:0.15,open:true}),'floor');
+blockCircle(0.3,0.21,0.16);
+// robot vacuum garage: a cabinet 50×50 at the sofa end, as high as the armrest (62) so the switch Вк2 at 90 stays free;
+// at the bottom an open bay 13 cm high, no bottom panel, the robot drives in and charges on a small dock at the back; above an open shelf, socket Г4 inside
+{const m=mat.tvStand,top=mat.woodL,x1=0,x2=0.5,z0=2.44,z1=2.94,zc=(z0+z1)/2,t=0.018,W=M('#f3f3f1',0.3),D=M('#2f3134',0.45),
+   info='Тумба 50 × 50 × 62 у торца дивана: внизу ниша 13 см — гараж робота-пылесоса Ø35 с зарядкой, выше открытая полка; розетка Г4 внутри',
+   mk=o=>{o.userData.sock=info;return o;};
+ mk(box(x1,x2,0,0.6,z0,z0+t,m));mk(box(x1,x2,0,0.6,z1-t,z1,m));mk(box(x1,x2+0.005,0.6,0.62,z0,z1,top));
+ mk(box(x1,x2,0.13,0.148,z0+t,z1-t,m));mk(box(x1,x2,0.37,0.388,z0+t,z1-t,m));
+ [['#7d4f3a',0.2],['#c9b28f',0.17],['#4f6470',0.22]].forEach(([col,h],k)=>mk(box(0.12,0.36,0.388,0.388+h*0.9,z0+0.05+k*0.032,z0+0.08+k*0.032,M(col,0.8))));
+ mk(box(0.08,0.42,0.388,0.548,2.73,2.9,M('#cbb89c',0.95)));
+ mk(cyl(0.28,0.196,2.62,0.07,0.096,M('#dfe7e8',0.3)));
+ mk(box(0.01,0.09,0,0.09,zc-0.08,zc+0.08,D));mk(cyl(0.091,0.06,zc,0.006,0.002,M('#58c46b',0.4,0,{emissive:'#3bd45a',emissiveIntensity:0.9}),{rz:Math.PI/2,cast:false}));
+ mk(cyl(0.265,0.055,zc,0.175,0.09,W));mk(cyl(0.265,0.035,zc,0.177,0.03,D));mk(cyl(0.23,0.11,zc,0.04,0.02,D));
+ mk(cyl(0.031,0.3,2.6355,0.018,0.037,W,{rz:Math.PI/2}));mk(box(0.042,0.05,0.09,0.3,2.631,2.64,D,{cast:false}));
+ block(x1,x2,z0,z1);}
 
 // ambient light: warm LED strip (24 V, 2700 K) in a cornice 12 cm under the ceiling along the sofa, window and TV walls,
 // and a strip on the back of the TV; both on the second key of Вк2. The glow on the ceiling and walls is drawn as soft additive quads
@@ -423,7 +439,7 @@ function cab(x1,x2,y1,y2,z1,z2,shelves=[],open=false){const P={p:groups.hung},t=
   box(x1,x1+t,y1,y2,z1,z2,mat.upperC,P);box(x2-t,x2,y1,y2,z1,z2,mat.upperC,P);
   if(open)box(x1+t,x2-t,y1,y1+t,z1,z1+0.04,mat.upperC,P);else box(x1+t,x2-t,y1,y1+t,z1,z2,mat.upperC,P);box(x1+t,x2-t,y2-t,y2,z1,z2,mat.upperC,P);box(x1+t,x2-t,y1+t,y2-t,z2-0.008,z2,mat.upperC,P);
   shelves.forEach(y=>box(x1+t,x2-t,y,y+t,z1+0.02,z2-0.008,mat.upperC,P));}
-cab(1.65,2.25,1.92,CEIL,5.0,5.5,[2.3]);sdoor('f',1.65,2.25,1.92,CEIL,5.0,false);
+cab(1.65,2.25,1.92,TOPC,5.0,5.5,[2.3]);sdoor('f',1.65,2.25,1.92,TOPC,5.0,false);
 // base run: solid where the dishwasher and the oven stand; the sink cabinet and the drawer stacks are hollow and open on click
 box(2.75,3.2,0.1,0.85,4.92,5.5,mat.graph);box(3.765,4.365,0.395,0.85,4.92,5.5,mat.graph);box(2.25,4.365,0,0.1,4.97,5.5,mat.plinth);
 block(2.25,4.365,4.88,5.5);
@@ -477,8 +493,8 @@ box(3.915,4.215,0.888,0.894,4.96,5.45,mat.hobGlass);
 box(2.25,4.365,0.888,1.45,5.488,5.5,mat.back1,{cast:false});box(4.353,4.365,0.888,1.45,4.9,5.488,mat.back2,{cast:false});
 box(3.765,4.353,1.45,1.65,5.488,5.5,mat.back2,{cast:false});box(4.353,4.365,1.45,1.65,5.18,5.488,mat.back2,{cast:false});
 // over the sink the lower tier is a dish drainer (no bottom, drip tray), the tier above is storage
-[[2.25,2.75],[2.75,3.2],[3.2,3.765]].forEach(([a,b],i)=>{cab(a,b,1.45,2.15,5.18,5.5,i?[1.8]:[],i===0);cab(a,b,2.15,CEIL,5.18,5.5,[2.42]);
-  sdoor('u'+i,a,b,1.45,2.15,5.18,i===1);sdoor('t'+i,a,b,2.15,CEIL,5.18,i===1);});
+[[2.25,2.75],[2.75,3.2],[3.2,3.765]].forEach(([a,b],i)=>{cab(a,b,1.45,2.15,5.18,5.5,i?[1.8]:[],i===0);cab(a,b,2.15,TOPC,5.18,5.5,[2.42]);
+  sdoor('u'+i,a,b,1.45,2.15,5.18,i===1);sdoor('t'+i,a,b,2.15,TOPC,5.18,i===1);});
 box(2.26,3.755,1.443,1.448,5.24,5.26,lampMat('kitchen',mat.led),{cast:false,p:groups.hung});
 // dishes behind the doors
 {const P={p:groups.hung},gl=M('#dfe9ec',0.15,0,{transparent:true,opacity:0.55});
@@ -497,12 +513,14 @@ box(2.26,3.755,1.443,1.448,5.24,5.26,lampMat('kitchen',mat.led),{cast:false,p:gr
  box(2.64,2.72,2.432,2.56,5.26,5.44,M('#b8714f',0.9),P);
  [2.86,2.98,3.1].forEach(x=>{cyl(x,1.51,5.3,0.042,0.085,mat.ceramic,P);cyl(x,1.86,5.38,0.035,0.11,gl,P);});
  [3.38,3.5,3.62].forEach((x,i)=>{cyl(x,1.54,5.33,0.05,0.16,gl,P);cyl(x,1.625,5.33,0.052,0.02,i===1?mat.oak:mat.black,P);});
- box(2.35,2.62,2.432,2.6,5.24,5.46,M('#d9cbb4',0.9),P);box(2.85,3.15,2.432,2.56,5.24,5.46,M('#c9b89c',0.9),P);}
+ box(2.35,2.62,2.432,2.55,5.24,5.46,M('#d9cbb4',0.9),P);box(2.85,3.15,2.432,2.56,5.24,5.46,M('#c9b89c',0.9),P);}
 // hood column at the bath wall: built-in hood 60 cm, the duct hidden in the cabinets above
 box(3.767,4.363,1.65,1.78,5.18,5.5,mat.steel,{p:groups.hung});box(3.767,4.363,1.65,1.78,5.16,5.18,M('#2b2b2e',0.3,0.4),{p:groups.hung});
 box(3.8,4.33,1.646,1.65,5.2,5.48,M('#8e9397',0.35,0.7),{cast:false,p:groups.hung});
-cab(3.765,4.365,1.78,2.15,5.18,5.5);cab(3.765,4.365,2.15,CEIL,5.18,5.5);cyl(4.065,(1.78+CEIL)/2,5.34,0.075,CEIL-1.78,mat.steel,{p:groups.hung});
-sdoor('h1',3.765,4.365,1.78,2.15,5.18,true);sdoor('h2',3.765,4.365,2.15,CEIL,5.18,true);
+cab(3.765,4.365,1.78,2.15,5.18,5.5);cab(3.765,4.365,2.15,TOPC,5.18,5.5);cyl(4.065,(1.78+CEIL)/2,5.34,0.075,CEIL-1.78,mat.steel,{p:groups.hung});
+sdoor('h1',3.765,4.365,1.78,2.15,5.18,true);sdoor('h2',3.765,4.365,2.15,TOPC,5.18,true);
+// filler 10 cm over all wall cabinets, flush with their fronts: the stretch ceiling's profile is fixed to it
+box(1.65,2.25,TOPC,CEIL,4.982,5.5,mat.upper,{p:groups.hung});box(2.25,4.365,TOPC,CEIL,5.162,5.5,mat.upper,{p:groups.hung});
 cyl(3.45,0.99,5.3,0.075,0.2,mat.ceramic);box(3.25,3.58,0.888,0.9,5.2,5.45,mat.oak);cyl(2.95,0.93,5.25,0.12,0.07,mat.ceramic,{rt:0.14});
 sph(2.92,0.98,5.23,0.045,0.045,0.045,M('#d9822b',0.6));sph(2.99,0.98,5.27,0.045,0.045,0.045,M('#c43b2e',0.6));
 cyl(2.69,0.97,5.43,0.03,0.16,M('#e9e4da',0.4));
@@ -512,14 +530,15 @@ wardIn(3.58,4.18,[[0,1.0,'shelf'],[1.0,2.0,'hang']],9);block(3.58,4.18,0,2.0);
 // hidden inside the wardrobe: thickens the partition at the window corner, so at night the bedroom lamps' shadow maps don't leak a line of light into the living room
 box(3.58,3.72,0,CEIL,0,0.14,mat.wall,{cast:true});
 // fixed filler 24 cm at the window wall: the sill sticks out 20 cm, so the first door opens past it
-box(4.18,4.198,0.02,2.38,0,0.238,mat.ward);
+box(4.18,4.198,0.02,TOPC-0.02,0,0.238,mat.ward);
 [[0.24,0.62,1],[0.62,1.0,0],[1.0,1.5,1],[1.5,2.0,0]].forEach(([a,b,l],i)=>swing('sd'+i,4.18,a,b,l,mat.ward,i?1.65:Math.PI/2));
-box(3.58,4.2,2.4,CEIL,0,2.0,mat.wall);
+box(3.58,4.2,TOPC,CEIL,0,2.0,mat.ward,{p:groups.hung});
 // open shelves at the wardrobe end, cut at 45° along the opened door
 {const P=[[3.6,2.0],[4.18,2.0],[4.18,2.128],[3.658,2.65],[3.6,2.65]];
- box(3.58,3.6,0,2.4,2.0,2.65,mat.wardC);box(3.6,3.658,0,2.4,2.63,2.65,mat.wardC);
+ box(3.58,3.6,0,TOPC,2.0,2.65,mat.wardC);box(3.6,3.658,0,TOPC,2.63,2.65,mat.wardC);
+ groups.hung.add(slabPoly([[3.58,2.0],[4.18,2.0],[4.18,2.128],[3.658,2.65],[3.58,2.65]],TOPC,CEIL,mat.ward));
  slabPoly(P,0,0.06,mat.plinth);
- [0.06,0.46,0.86,1.26,1.66,2.06,2.38].forEach(y=>slabPoly(P,y,y+0.022,mat.ward));
+ [0.06,0.46,0.86,1.26,1.66,2.06,TOPC-0.022].forEach(y=>slabPoly(P,y,y+0.022,mat.ward));
  const cols=['#7d4f3a','#c9b28f','#4f6470','#a8473a','#d8cdb8','#5d6b4a','#8c7a68'];
  [0.082,0.482,0.882,1.282,1.682].forEach((y,k)=>{let z=2.03;while(z<2.42){const t=0.025+rnd()*0.025,h=0.2+rnd()*0.12;
    box(3.61,3.61+0.17+rnd()*0.05,y,y+h,z,z+t,M(cols[Math.floor(rnd()*cols.length)],0.8));z+=t+0.004;if(rnd()<0.12)z+=0.05;}
@@ -604,7 +623,9 @@ box(5.26,5.84,0.74,0.8,4.015,4.021,M('#dedfdc',0.4));cyl(5.77,0.77,4.023,0.018,0
 box(5.33,5.5,0.755,0.785,4.021,4.024,M('#2b3237',0.2));
 box(5.25,5.85,0.78,0.86,4.9,5.5,mat.ceramic,{block:true});cyl(5.55,0.862,5.17,0.19,0.004,M('#e6ecee',0.15),{sz:0.7});
 cyl(5.55,0.98,5.42,0.014,0.14,mat.chrome,{rx:Math.PI/2});cyl(5.55,1.02,5.47,0.02,0.05,mat.chrome);
-box(5.3,5.8,1.05,1.8,5.485,5.495,mat.mirror,{cast:false,p:groups.hung});box(5.3,5.8,1.81,1.83,5.47,5.495,lampMat('mirror',mat.led),{cast:false,p:groups.hung});
+// mirror with its own light: the LED bar on top is switched by a touch button on the glass (cable output В4 behind the mirror)
+lampHit(box(5.3,5.8,1.05,1.8,5.485,5.495,mat.mirror,{cast:false,p:groups.hung}),'mirror');lampHit(box(5.3,5.8,1.81,1.83,5.47,5.495,lampMat('mirror',mat.led),{cast:false,p:groups.hung}),'mirror');
+lampHit(cyl(5.74,1.1,5.4835,0.011,0.002,M('#f6f4ef',0.3),{rx:Math.PI/2,cast:false,p:groups.hung}),'mirror');lampHit(cyl(5.74,1.1,5.4825,0.004,0.001,lampMat('mirror',mat.led),{rx:Math.PI/2,cast:false,p:groups.hung}),'mirror');
 // bathtub 170×70 along the far wall, with a screen; mixer and hand shower on its end wall by the sink
 {const T=mat.ceramic,x1=5.88,x2=6.58,z1=3.8,z2=5.5,top=0.6,r=0.07,bot=0.2;
  box(x1,x1+r,0,top,z1,z2,T);box(x2-r,x2,bot,top,z1,z2,T);
@@ -625,15 +646,21 @@ box(5.3,5.8,1.05,1.8,5.485,5.495,mat.mirror,{cast:false,p:groups.hung});box(5.3,
  box(6.3,6.52,1.3,1.42,3.595,3.765,M('#b89b78',0.9));
  box(5.95,6.5,0.95,1.06,3.595,3.765,M('#f3efe8',0.95));
  [6.05,6.3].forEach(x=>cyl(x,1.71,3.685,0.05,0.12,M('#dfe7e8',0.3)));}
-// heated towel rail
+// towel rail heated by hot water (no electrics): two pipe stubs into the wall
 cyl(4.52,1.22,4.48,0.012,0.68,mat.chrome);cyl(4.52,1.22,4.82,0.012,0.68,mat.chrome);
 for(let y=0.92;y<1.56;y+=0.1)cyl(4.52,y,4.65,0.01,0.34,mat.chrome,{rx:Math.PI/2,seg:8});
 box(4.5,4.56,1.05,1.5,4.53,4.78,M('#cfd8d6',0.95));
+[[0.92,4.48],[1.52,4.82]].forEach(([y,z])=>{cyl(4.507,y,z,0.01,0.026,mat.chrome,{rz:Math.PI/2});cyl(4.497,y,z,0.022,0.004,mat.chrome,{rz:Math.PI/2});});
+// exhaust fan on the wall behind the toilet, in the corner under the ceiling: right key of Вк3 by the door, cable output В3 behind it; a green dot shows it runs
+{const F=M('#f4f3f0',0.35),G=M('#d6d5d1',0.5),P={p:groups.hung,cast:false},x=4.6,y=2.5,z=5.5,
+   info='В3 · вытяжной вентилятор Ø100 в углу за унитазом, центр на 250 см — правая клавиша Вк3 у двери',mk=o=>{o.userData.sock=info;return o;};
+ mk(box(x-0.08,x+0.08,y-0.08,y+0.08,z-0.012,z,F,P));
+ for(let i=-3;i<=3;i++)mk(box(x-0.058,x+0.058,y+i*0.018-0.003,y+i*0.018+0.003,z-0.016,z-0.012,G,P));
+ mk(cyl(x+0.066,y-0.066,z-0.0125,0.0035,0.002,lampMat('fan',M('#8fd19e',0.4,0,{emissive:'#39d46a',emissiveIntensity:1.4})),{rx:Math.PI/2,...P}));}
 
 // ---------- ceiling lights (hidden with the ceiling in the overview)
 const disk=(x,z,r,k)=>cyl(x,CEIL-0.02,z,r,0.035,lampMat(k,mat.bulb),{p:groups.ceil,cast:false});
 disk(1.75,1.4,0.28,'living');disk(5.3,1.7,0.25,'bed');disk(5.25,4.5,0.16,'bath');
-disk(2.6,2.6,0.045,'living');
 // magnetic track: black surface profile 22×45 mm on the ceiling; modules snap on anywhere along it —
 // ['line',s1,s2] a diffused linear module from s1 to s2 metres along the track, ['spot',s,tx,ty,tz] a spot aimed at a point
 // magnetic tracks recessed flush into the stretch ceiling and filled with linear modules end to end: one continuous strip of light, no spots
@@ -666,15 +693,15 @@ Object.assign(sun.shadow.camera,{left:-6.5,right:6.5,top:6.5,bottom:-6.5,near:1,
 // [circuit, x,y,z, day intensity, day reach, night intensity, night reach, shadow]
 [['living',1.75,2.4,1.4,0.32,6,1.5,6.5,1],['kitchen',3.05,2.45,4.75,0.3,4,1.1,4.5,1],['hall',1.1,2.45,4.2,0.25,4,0.95,4.5,1],
  ['bed',5.3,2.4,1.8,0.3,6,1.3,5.5,1],['bath',5.3,2.3,4.5,0.38,4,1.0,3.6,1],['bedside',4.78,0.93,3.24,0.18,1.6,0.45,1.4,0],
- ['kitchen',2.95,1.38,5.3,0.2,1.4,0.5,1.3,0],['mirror',5.55,1.7,5.25,0,1.5,0.4,1.6,0],['floor',0.33,1.42,2.68,0,2.5,0.55,3,0],['desk',6.36,0.98,1.05,0,1.5,0.4,1.6,0],
+ ['kitchen',2.95,1.38,5.3,0.2,1.4,0.5,1.3,0],['mirror',5.55,1.7,5.25,0,1.5,0.4,1.6,0],['floor',0.33,1.42,0.21,0,2.5,0.55,3,0],['desk',6.36,0.98,1.05,0,1.5,0.4,1.6,0],
  ['ambient',1.75,2.05,1.35,0,3,0.3,4.5,0],['ambient',3.3,1.2,1.4,0,1.2,0.2,1.6,0]]
   .forEach(([k,x,y,z,di,dd,ni,nd,sh])=>{const l=new THREE.PointLight('#ffe9cc',di,dd,2);l.position.set(x,y,z);S.add(l);
     if(sh){l.shadow.mapSize.set(coarse?256:512,coarse?256:512);l.shadow.camera.near=0.05;l.shadow.bias=-0.004;}
     lampOf(k).lights.push({l,di,dd,ni,nd,sh});});
 
 // ---------- light switches at 900 mm: a click on a key switches its light; Вк5 by the entrance is the master for all ceiling lights
-const SW={living:1,ambient:1,kitchen:1,hall:1,bed:1,bath:1,mirror:1,floor:1,bedside:1,desk:1};let master=1;
-const MAINS=new Set(['living','ambient','kitchen','hall','bed','bath','mirror']);
+const SW={living:1,ambient:1,kitchen:1,hall:1,bed:1,bath:1,mirror:1,fan:0,floor:1,bedside:1,desk:1};let master=1;
+const MAINS=new Set(['living','ambient','kitchen','hall','bed','bath','mirror','fan']);
 const lit=k=>!!SW[k]&&(!MAINS.has(k)||!!master);
 const swM={plate:M('#f4f2ee',0.4),key:M('#fbfaf7',0.35),off:M('#cfc9bf',0.6),glow:M('#ff9a40',0.5,0,{emissive:'#ff7a1a',emissiveIntensity:1.3}),hit:new THREE.MeshBasicMaterial({visible:false})};
 const SWITCHES={};
@@ -686,17 +713,18 @@ function makeSwitch(id,x,z,nx,nz,keys,hw=0.2){const g=new THREE.Group();g.positi
     add(kw,0.066,0.006,0,0,0,swM.key,r).userData.sw={id,i};
     s.keys.push({k,r,ind:add(Math.min(0.014,kw*0.5),0.005,0.002,0,-0.026,0.0035,swM.off,r)});});
   add(hw,0.2,0.05,0,0,0.025,swM.hit).userData.sw={id,i:-1};SWITCHES[id]=s;}
-makeSwitch('Вк1',0.36,5.5,0,-1,['hall','kitchen'],0.115);
+makeSwitch('Вк1',0.36,5.5,0,-1,['hall'],0.115);
 makeSwitch('Вк5',0.48,5.5,0,-1,['master'],0.115);
 makeSwitch('Вк2',0,2.88,1,0,['living','ambient']);
-makeSwitch('Вк3',4.365,4.5,-1,0,['bath','mirror']);
+makeSwitch('Вк3',4.365,4.5,-1,0,['bath','fan'],0.115);
+makeSwitch('Вк6',4.365,4.62,-1,0,['kitchen'],0.115);   // kitchen light: next to Вк3 at the end of the run, on the kitchen side
 makeSwitch('Вк4',4.48,3.435,0,-1,['bed']);
 // ---------- sockets and cable outputs: numbers, places and heights as on the electrics board; a tap tells what each one is for
 // id, x, z, wall normal x, z, centre height, sockets, aerial + LAN inserts, IP44 lid, what for. Inside cabinets they sit on the back panel.
 const SOCK=[
  ['Г1',3.48,1.39,-1,0,1.1,3,2,0,'за телевизором: ТВ и приставка'],['Г2',3.462,0.93,-1,0,0.3,2,0,0,'за ТВ-тумбой: консоль, колонка'],
  ['Г6',3.462,1.8,-1,0,0.3,0,0,0,'в ТВ-тумбе: блок питания подсветки, от правой клавиши Вк2'],
- ['Г3',0,0.19,1,0,0.3,2,0,0,'у дивана со стороны окна: зарядка, лампа'],['Г4',0,2.6,1,0,0.3,2,0,0,'у дивана с другой стороны: торшер'],
+ ['Г3',0,0.19,1,0,0.3,2,0,0,'у дивана со стороны окна: торшер, зарядка'],['Г4',0,2.6,1,0,0.3,2,0,0,'в тумбе у торца дивана: зарядка робота-пылесоса'],
  ['Г5',3.05,0,0,1,0.3,1,0,0,'у окна: пылесос, гирлянда, обогреватель'],
  ['П1',0.018,5.35,1,0,0.3,1,0,0,'в тумбе в нише: сушилка для обуви, пылесос'],['П2',0.018,3.33,1,0,2.0,1,0,0,'в шкафу под верхней полкой: роутер'],
  ['П3',0.018,4.86,1,0,2.2,0,0,0,'на антресоли: блок питания магнитной линии прихожей, от Вк1'],
@@ -704,11 +732,10 @@ const SOCK=[
  ['К3',3.62,5.482,0,-1,0.6,0,0,0,'индукционная панель, клеммник за ящиками'],['К7',3.43,5.482,0,-1,0.6,1,0,0,'духовка, в соседней тумбе за ящиками'],
  ['К4',3.0,5.488,0,-1,1.1,3,0,0,'над столешницей: чайник, тостер'],['К5',4.23,5.492,0,-1,2.0,1,0,0,'вытяжка, в шкафу над ней'],
  ['К6',2.6,5.492,0,-1,2.3,0,0,0,'подсветка столешницы: блок питания в верхнем шкафу'],
- ['К8',2.1,5.492,0,-1,2.2,0,0,0,'в шкафу над холодильником: блок питания магнитной линии кухни, от Вк1'],
+ ['К8',2.1,5.492,0,-1,2.2,0,0,0,'в шкафу над холодильником: блок питания магнитной линии кухни, от Вк6'],
  ['С1',4.78,3.435,0,-1,0.7,2,0,0,'над тумбой: лампа, зарядка'],['С2',6.58,3.25,-1,0,0.7,1,0,0,'у кровати со стороны стены: зарядка'],
  ['С3',6.58,0.6,-1,0,0.9,3,0,0,'над столом: монитор, ноутбук, лампа'],['С4',4.48,3.435,0,-1,0.3,1,0,0,'у двери: пылесос, утюг'],
- ['В1',5.28,3.57,0,1,1.0,1,0,1,'стиральная машина'],['В2',5.14,5.495,0,-1,1.15,1,0,1,'у зеркала: фен, бритва'],
- ['В3',4.5,4.65,1,0,0.6,0,0,0,'полотенцесушитель']];
+ ['В1',5.28,3.57,0,1,1.0,1,0,1,'стиральная машина'],['В2',5.14,5.495,0,-1,1.15,1,0,1,'у зеркала: фен, бритва']];
 {const sm={plate:M('#f7f5f1',0.35),face:M('#e6e3dd',0.45),hole:M('#2e2c2a',0.7),pin:M('#c9cdd0',0.3,0.8),
    lid:new THREE.MeshStandardMaterial({color:'#eef3f5',roughness:0.1,transparent:true,opacity:0.45,depthWrite:false})},cg=new THREE.CylinderGeometry(1,1,1,28);
  const few=n=>n===1?'розетка':'розетки';
@@ -726,7 +753,7 @@ const SOCK=[
   if(lid)add(W-0.006,0.074,0.016,0,0.002,0.017,sm.lid);
   add(W+0.04,0.12,0.03,0,0,0.015,swM.hit);});}
 const LNAME={hall:['свет в прихожей','включён','выключен'],kitchen:['свет на кухне','включён','выключен'],living:['свет в гостиной','включён','выключен'],ambient:['подсветка в гостиной','включена','выключена'],
-  bath:['свет в ванной','включён','выключен'],mirror:['подсветка зеркала','включена','выключена'],bed:['свет в спальне','включён','выключен'],
+  bath:['свет в ванной','включён','выключен'],mirror:['подсветка зеркала','включена','выключена'],fan:['вытяжка в ванной','включена','выключена'],bed:['свет в спальне','включён','выключен'],
   floor:['торшер','включён','выключен'],bedside:['лампа у кровати','включена','выключена'],desk:['лампа на столе','включена','выключена']};
 function applyLights(){const n=NIGHT.on;
   for(const k in LAMPS){const L=LAMPS[k],on=lit(k);
@@ -757,7 +784,7 @@ const VIEWS={
   'sverhu':{name:'Сверху, как на плане',sub:'',mode:'over',o:{tx:3.29,tz:2.35,theta:0,phi:0.02,dist:13.2}},
   'vhod':{name:'От входной двери',sub:'прихожая, гостиная и кухня',mode:'walk',p:[1.1,5.12],t:[2.4,1.15,2.3]},
   'prihozhaya':{name:'Прихожая',sub:'ниша у входа: тумба, крючки, антресоль; шкаф на 4 дверки',mode:'walk',p:[1.55,5.3],t:[0.0,1.3,4.85],fov:80},
-  'gostinaya':{name:'Гостиная',sub:'диван с картиной над ним, журнальный стол, шкаф в прихожей',mode:'walk',p:[2.72,0.5],t:[0.5,1.0,2.7]},
+  'gostinaya':{name:'Гостиная',sub:'диван с картиной над ним, журнальный стол; у торца дивана тумба: внизу гараж робота-пылесоса, выше полка; торшер у окна',mode:'walk',p:[2.72,0.5],t:[0.5,1.0,2.7]},
   'podsvetka':{name:'Гостиная вечером',sub:'люстра выключена, горит подсветка: лента в карнизе под потолком и за телевизором',mode:'walk',p:[1.74,3.45],t:[1.74,1.35,0],fov:66,off:['living','kitchen','hall'],night:true},
   'kuhnya':{name:'Кухня из гостиной',sub:'над мойкой сушка для посуды, выше хранение; стыки верхних и нижних шкафов совпадают; под индукцией духовка с СВЧ',mode:'walk',p:[1.6,2.75],t:[3.5,1.15,5.25],fov:66,flaps:{u0:1}},
   'kuhnya-sboku':{name:'Кухня сбоку',sub:'от двери ванной: индукция, под ней духовка 60×45 и ящик, ящики выдвигаются, посудомойка, мойка, холодильник',mode:'walk',p:[4.2,3.75],t:[2.4,0.9,5.25],fov:70,flaps:{dr2:1}},
