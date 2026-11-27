@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="description" content="3D-модель квартиры: обзор сверху и прогулка по комнатам.">
+<meta name="description" content="3D-модель квартиры: обзор сверху, прогулка по комнатам, ночь и выключатели света.">
 <title>Квартира в 3D</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@600;700&display=swap">
 <style>
@@ -70,6 +70,7 @@ body.shot .cap small{display:block;font:500 16px/1.4 var(--f-ui);color:var(--mut
   </div>
   <div class="views" id="views" role="group" aria-label="Точки обзора"></div>
   <button class="tool" id="cutBtn" type="button" aria-pressed="true">Срез стен</button>
+  <button class="tool" id="nightBtn" type="button" aria-pressed="false" title="Ночь (N)">Ночь</button>
   <a class="tool" href="plan.html">План</a>
 </nav>
 <div class="cap" id="cap"></div>
@@ -146,6 +147,11 @@ const mat={
   ctop:new THREE.MeshStandardMaterial({map:rep(marbleT,1.05,0.31),roughness:0.3}),
 };
 ['wall','pvc','glass','linen','door','doorEnt','mirror','back1','back2'].forEach(k=>mat[k].clippingPlanes=[clip]);
+// lamps: every fixture gets its own emissive material, so a switch can turn just that light off
+const NIGHT={on:false,sky:null},LAMPS={};
+const lampOf=k=>LAMPS[k]||(LAMPS[k]={mats:new Map(),lights:[]});
+function lampMat(k,base){const L=lampOf(k);if(!L.mats.has(base)){const m=base.clone();m.userData.e0=base.emissiveIntensity;L.mats.set(base,m);}return L.mats.get(base);}
+const lampHit=(me,k)=>{me.userData.lamp=k;return me;};
 
 // ---------- builders
 const obst=[]; // walkable-area obstacles as polygons [[x,z],...]
@@ -303,7 +309,7 @@ box(3.445,3.475,0.85,1.55,0.78,2.0,mat.tv,{p:groups.hung});
 cyl(3.3,0.58,0.85,0.05,0.22,M('#c9b8a2',0.6));box(3.18,3.42,0.47,0.55,1.75,1.95,M('#7d6a5a',0.8));
 cyl(3.2,0.19,0.3,0.16,0.38,mat.pot,{rt:0.19});sph(3.2,0.75,0.3,0.24,0.38,0.24,mat.green);sph(3.12,1.0,0.25,0.16,0.22,0.16,mat.greenD);
 blockCircle(3.2,0.3,0.2);
-cyl(0.3,0.01,2.68,0.15,0.02,mat.black);cyl(0.3,0.8,2.68,0.012,1.58,mat.black,{seg:12});cyl(0.3,1.55,2.68,0.2,0.26,mat.shade,{rt:0.15,open:true});
+lampHit(cyl(0.3,0.01,2.68,0.15,0.02,mat.black),'floor');lampHit(cyl(0.3,0.8,2.68,0.012,1.58,mat.black,{seg:12}),'floor');lampHit(cyl(0.3,1.55,2.68,0.2,0.26,lampMat('floor',mat.shade),{rt:0.15,open:true}),'floor');
 blockCircle(0.3,2.68,0.16);
 
 // dining table, chairs and pendant left out for now: the zone between the living room and the kitchen stays free
@@ -345,7 +351,7 @@ box(2.25,4.365,0.888,1.45,5.488,5.5,mat.back1,{cast:false});box(4.353,4.365,0.88
 box(3.765,4.353,1.45,1.65,5.488,5.5,mat.back2,{cast:false});box(4.353,4.365,1.45,1.65,5.18,5.488,mat.back2,{cast:false});
 [[2.25,2.755],[2.755,3.26],[3.26,3.765]].forEach(([a,b],i)=>{cab(a,b,1.45,2.15,5.18,5.5,[1.8]);cab(a,b,2.15,CEIL,5.18,5.5,[2.42]);
   flap('u'+i,a,b,1.45,2.15,5.18);flap('t'+i,a,b,2.15,CEIL,5.18,1.2);});
-box(2.26,3.755,1.443,1.448,5.24,5.26,mat.led,{cast:false,p:groups.hung});
+box(2.26,3.755,1.443,1.448,5.24,5.26,lampMat('kitchen',mat.led),{cast:false,p:groups.hung});
 // dishes behind the lift-up fronts
 {const P={p:groups.hung},gl=M('#dfe9ec',0.15,0,{transparent:true,opacity:0.55});
  [0,1,2,3,4].forEach(i=>cyl(2.5,1.475+i*0.012,5.34,0.11,0.008,mat.ceramic,P));cyl(2.5,1.88,5.34,0.075,0.12,gl,P);
@@ -386,13 +392,13 @@ box(5.0,6.56,0.61,0.625,1.62,1.98,mat.throwM);
 [[5.0,1.46],[6.53,1.46]].forEach(([x,z])=>box(x,x+0.04,0,0.1,z,z+0.04,mat.black));
 block(4.98,6.58,1.435,3.435);
 box(4.6,4.96,0,0.5,3.05,3.42,mat.ward,{block:true});box(4.62,4.94,0.3,0.302,3.048,3.05,mat.black);
-cyl(4.78,0.62,3.24,0.05,0.24,mat.ceramic);cyl(4.78,0.83,3.24,0.14,0.18,mat.shade,{rt:0.1,open:true});
+lampHit(cyl(4.78,0.62,3.24,0.05,0.24,mat.ceramic),'bedside');lampHit(cyl(4.78,0.83,3.24,0.14,0.18,lampMat('bedside',mat.shade),{rt:0.1,open:true}),'bedside');
 // desk 55×120 at the outside wall, chair, lamp, laptop
 box(6.03,6.58,0.72,0.75,0.0,1.2,mat.woodL,{block:true});
 [[6.05,0.03],[6.53,0.03],[6.05,1.15],[6.53,1.15]].forEach(([x,z])=>box(x,x+0.025,0,0.72,z,z+0.025,mat.black));
 box(6.2,6.5,0.75,0.765,0.4,0.72,M('#b0b3b6',0.3,0.6));
 {const sc=box(6.47,6.49,0.765,0.98,0.4,0.72,M('#2a2c2f',0.3,0.4));sc.rotation.z=0.25;}
-cyl(6.45,0.76,1.05,0.06,0.02,mat.black);cyl(6.45,0.95,1.05,0.01,0.38,mat.black,{seg:8});cyl(6.38,1.12,1.05,0.07,0.1,mat.shade,{rt:0.04,open:true});
+lampHit(cyl(6.45,0.76,1.05,0.06,0.02,mat.black),'desk');lampHit(cyl(6.45,0.95,1.05,0.01,0.38,mat.black,{seg:8}),'desk');lampHit(cyl(6.38,1.12,1.05,0.07,0.1,lampMat('desk',mat.shade),{rt:0.04,open:true}),'desk');
 cyl(5.81,0.46,0.6,0.21,0.05,mat.seat);[[-0.13,-0.13],[0.13,-0.13],[-0.13,0.13],[0.13,0.13]].forEach(([dx,dz])=>cyl(5.81+dx,0.22,0.6+dz,0.015,0.44,mat.oak,{seg:10}));
 box(5.59,5.63,0.48,0.86,0.42,0.78,mat.back);blockCircle(5.81,0.6,0.22);
 
@@ -402,13 +408,17 @@ box(5.59,5.63,0.48,0.86,0.42,0.78,mat.back);blockCircle(5.81,0.6,0.22);
 // toilet
 box(4.67,5.01,0.38,0.8,5.32,5.48,mat.ceramic);cyl(4.84,0.2,5.08,0.15,0.4,mat.ceramic,{rt:0.19,sz:1.45});cyl(4.84,0.415,5.07,0.19,0.03,mat.ceramic,{sz:1.5});
 cyl(4.84,0.805,5.4,0.03,0.01,mat.chrome);block(4.65,5.03,4.85,5.5);
-// washing machine under the sink
-box(5.28,5.82,0,0.72,4.97,5.49,mat.appl);
-cyl(5.55,0.36,4.965,0.17,0.012,mat.chrome,{rx:Math.PI/2});cyl(5.55,0.36,4.958,0.135,0.006,M('#2b3237',0.1,0.3),{rx:Math.PI/2});
-box(5.29,5.81,0.64,0.7,4.964,4.97,M('#dedfdc',0.4));cyl(5.74,0.67,4.962,0.018,0.01,mat.black,{rx:Math.PI/2});
+// wall-hung vanity under the sink: two drawers
+box(5.27,5.83,0.32,0.78,4.95,5.49,mat.ward);box(5.27,5.83,0.548,0.552,4.948,4.95,mat.wardC);
+[0.44,0.67].forEach(y=>box(5.47,5.63,y-0.008,y+0.008,4.935,4.948,mat.chrome));
+// washing machine 60×45 by the tub: between the open bathroom door and the shelves, front to the sink
+box(5.25,5.85,0.02,0.85,3.57,4.015,mat.appl,{block:true});box(5.27,5.83,0,0.02,3.6,3.99,mat.black);
+cyl(5.55,0.46,4.021,0.17,0.012,mat.chrome,{rx:Math.PI/2});cyl(5.55,0.46,4.028,0.135,0.006,M('#2b3237',0.1,0.3),{rx:Math.PI/2});
+box(5.26,5.84,0.74,0.8,4.015,4.021,M('#dedfdc',0.4));cyl(5.77,0.77,4.023,0.018,0.01,mat.black,{rx:Math.PI/2});
+box(5.33,5.5,0.755,0.785,4.021,4.024,M('#2b3237',0.2));
 box(5.25,5.85,0.78,0.86,4.9,5.5,mat.ceramic,{block:true});cyl(5.55,0.862,5.17,0.19,0.004,M('#e6ecee',0.15),{sz:0.7});
 cyl(5.55,0.98,5.42,0.014,0.14,mat.chrome,{rx:Math.PI/2});cyl(5.55,1.02,5.47,0.02,0.05,mat.chrome);
-box(5.3,5.8,1.05,1.8,5.485,5.495,mat.mirror,{cast:false,p:groups.hung});box(5.3,5.8,1.81,1.83,5.47,5.495,mat.led,{cast:false,p:groups.hung});
+box(5.3,5.8,1.05,1.8,5.485,5.495,mat.mirror,{cast:false,p:groups.hung});box(5.3,5.8,1.81,1.83,5.47,5.495,lampMat('mirror',mat.led),{cast:false,p:groups.hung});
 // bathtub 170×70 along the far wall, with a screen; mixer and hand shower on its end wall by the sink
 {const T=mat.ceramic,x1=5.88,x2=6.58,z1=3.8,z2=5.5,top=0.6,r=0.07,bot=0.2;
  box(x1,x1+r,0,top,z1,z2,T);box(x2-r,x2,bot,top,z1,z2,T);
@@ -435,13 +445,13 @@ for(let y=0.92;y<1.56;y+=0.1)cyl(4.52,y,4.65,0.01,0.34,mat.chrome,{rx:Math.PI/2,
 box(4.5,4.56,1.05,1.5,4.53,4.78,M('#cfd8d6',0.95));
 
 // ---------- ceiling lights (hidden with the ceiling in the overview)
-const disk=(x,z,r)=>cyl(x,CEIL-0.02,z,r,0.035,mat.bulb,{p:groups.ceil,cast:false});
-disk(1.75,1.4,0.28);disk(5.3,1.7,0.25);disk(5.25,4.5,0.16);
-[[2.55,4.85],[3.35,4.85],[1.1,3.6],[1.1,4.8],[2.6,2.6]].forEach(([x,z])=>disk(x,z,0.045));
+const disk=(x,z,r,k)=>cyl(x,CEIL-0.02,z,r,0.035,lampMat(k,mat.bulb),{p:groups.ceil,cast:false});
+disk(1.75,1.4,0.28,'living');disk(5.3,1.7,0.25,'bed');disk(5.25,4.5,0.16,'bath');
+[[2.55,4.85,'kitchen'],[3.35,4.85,'kitchen'],[1.1,3.6,'hall'],[1.1,4.8,'hall'],[2.6,2.6,'living']].forEach(([x,z,k])=>disk(x,z,0.045,k));
 
 // ---------- outdoors (walk mode only)
 {const sky=new THREE.Mesh(new THREE.SphereGeometry(180,32,16),new THREE.MeshBasicMaterial({map:tex(8,512,skyDraw),side:THREE.BackSide,fog:false}));
- sky.position.set(3,-6,2.5);groups.outdoor.add(sky);
+ sky.position.set(3,-6,2.5);groups.outdoor.add(sky);NIGHT.sky=sky.material;
  const gr=new THREE.Mesh(new THREE.PlaneGeometry(400,400),M('#a3a993',1));gr.rotation.x=-Math.PI/2;gr.position.set(3,-9,0);groups.outdoor.add(gr);
  const bm=[M('#d9d1c3',0.9),M('#cfc8bb',0.9),M('#e2dccf',0.9)];
  [[-26,-48,14,24],[-6,-52,18,30],[16,-46,12,20],[34,-58,16,34],[-44,-62,20,28]].forEach(([x,z,w,h],i)=>{const b=new THREE.Mesh(new THREE.BoxGeometry(w,h,10),bm[i%3]);b.position.set(x,-9+h/2,z);groups.outdoor.add(b);});
@@ -452,12 +462,62 @@ disk(1.75,1.4,0.28);disk(5.3,1.7,0.25);disk(5.25,4.5,0.16);
  es.add(new THREE.Mesh(new THREE.SphereGeometry(5,32,16),new THREE.MeshBasicMaterial({map:tex(8,256,(g,w,h)=>{const gr=g.createLinearGradient(0,0,0,h);
    gr.addColorStop(0,'#c9c4ba');gr.addColorStop(0.45,'#b3aa9d');gr.addColorStop(0.56,'#94836c');gr.addColorStop(1,'#5f4c37');g.fillStyle=gr;g.fillRect(0,0,w,h);}),side:THREE.BackSide})));
  S.environment=pm.fromScene(es,0.02).texture;pm.dispose();}
-S.add(new THREE.HemisphereLight('#ffffff','#cdbda6',0.3));
+const hemi=new THREE.HemisphereLight('#ffffff','#cdbda6',0.3);S.add(hemi);
 const sun=new THREE.DirectionalLight('#fff3e2',1.15);sun.position.set(2.0,7.5,-5.6);sun.target.position.set(3.3,0,2.4);S.add(sun,sun.target);
 sun.castShadow=true;sun.shadow.mapSize.set(coarse?1024:2048,coarse?1024:2048);
 Object.assign(sun.shadow.camera,{left:-6.5,right:6.5,top:6.5,bottom:-6.5,near:1,far:24});sun.shadow.bias=-0.0004;sun.shadow.normalBias=0.025;
-[[1.75,2.4,1.4,0.32,6],[3.1,2.3,4.85,0.3,4],[1.0,2.3,4.3,0.25,4],[5.3,2.4,1.8,0.3,6],[5.3,2.3,4.5,0.38,4],[4.78,0.85,3.24,0.18,1.6],[2.95,1.38,5.3,0.2,1.4]]
-  .forEach(([x,y,z,i,d])=>{const l=new THREE.PointLight('#ffe9cc',i,d,2);l.position.set(x,y,z);S.add(l);});
+// room lights: a soft fill by day; at night the real light, with shadows from walls and doors so it stays in its room
+// [circuit, x,y,z, day intensity, day reach, night intensity, night reach, shadow]
+[['living',1.75,2.4,1.4,0.32,6,1.5,6.5,1],['kitchen',3.1,2.3,4.85,0.3,4,1.1,4.5,1],['hall',1.0,2.3,4.3,0.25,4,0.95,4.5,1],
+ ['bed',5.3,2.4,1.8,0.3,6,1.3,5.5,1],['bath',5.3,2.3,4.5,0.38,4,1.0,3.6,1],['bedside',4.78,0.85,3.24,0.18,1.6,0.45,1.4,0],
+ ['kitchen',2.95,1.38,5.3,0.2,1.4,0.5,1.3,0],['mirror',5.55,1.7,5.25,0,1.5,0.4,1.6,0],['floor',0.33,1.42,2.68,0,2.5,0.55,3,0],['desk',6.36,0.98,1.05,0,1.5,0.4,1.6,0]]
+  .forEach(([k,x,y,z,di,dd,ni,nd,sh])=>{const l=new THREE.PointLight('#ffe9cc',di,dd,2);l.position.set(x,y,z);S.add(l);
+    if(sh){l.shadow.mapSize.set(coarse?256:512,coarse?256:512);l.shadow.camera.near=0.05;l.shadow.bias=-0.004;}
+    lampOf(k).lights.push({l,di,dd,ni,nd,sh});});
+
+// ---------- light switches at 900 mm: a click on a key switches its light; Вк5 by the entrance is the master for all ceiling lights
+const SW={living:1,kitchen:1,hall:1,bed:1,bath:1,mirror:1,floor:1,bedside:1,desk:1};let master=1;
+const MAINS=new Set(['living','kitchen','hall','bed','bath','mirror']);
+const lit=k=>!!SW[k]&&(!MAINS.has(k)||!!master);
+const swM={plate:M('#f4f2ee',0.4),key:M('#fbfaf7',0.35),off:M('#cfc9bf',0.6),glow:M('#ff9a40',0.5,0,{emissive:'#ff7a1a',emissiveIntensity:1.3}),hit:new THREE.MeshBasicMaterial({visible:false})};
+const SWITCHES={};
+function makeSwitch(id,x,z,nx,nz,keys,hw=0.2){const g=new THREE.Group();g.position.set(x,0.9,z);g.rotation.y=Math.atan2(nx,nz);S.add(g);
+  const add=(w,h,d,px,py,pz,m,p=g)=>{const me=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);me.position.set(px,py,pz);me.receiveShadow=true;p.add(me);return me;};
+  add(0.086,0.086,0.01,0,0,0.005,swM.plate).userData.sw={id,i:-1};
+  const n=keys.length,kw=(0.066-(n-1)*0.004)/n,s={id,g,keys:[]};
+  keys.forEach((k,i)=>{const r=new THREE.Group();r.position.set(-0.033+kw/2+i*(kw+0.004),0,0.011);g.add(r);
+    add(kw,0.066,0.006,0,0,0,swM.key,r).userData.sw={id,i};
+    s.keys.push({k,r,ind:add(Math.min(0.014,kw*0.5),0.005,0.002,0,-0.026,0.0035,swM.off,r)});});
+  add(hw,0.2,0.05,0,0,0.025,swM.hit).userData.sw={id,i:-1};SWITCHES[id]=s;}
+makeSwitch('Вк1',0.36,5.5,0,-1,['hall','kitchen'],0.115);
+makeSwitch('Вк5',0.48,5.5,0,-1,['master'],0.115);
+makeSwitch('Вк2',0,2.88,1,0,['living']);
+makeSwitch('Вк3',4.365,4.5,-1,0,['bath','mirror']);
+makeSwitch('Вк4',4.48,3.435,0,-1,['bed']);
+const LNAME={hall:['свет в прихожей','включён','выключен'],kitchen:['свет на кухне','включён','выключен'],living:['свет в гостиной','включён','выключен'],
+  bath:['свет в ванной','включён','выключен'],mirror:['подсветка зеркала','включена','выключена'],bed:['свет в спальне','включён','выключен'],
+  floor:['торшер','включён','выключен'],bedside:['лампа у кровати','включена','выключена'],desk:['лампа на столе','включена','выключена']};
+function applyLights(){const n=NIGHT.on;
+  for(const k in LAMPS){const L=LAMPS[k],on=lit(k);
+    L.mats.forEach(m=>{m.emissiveIntensity=on?m.userData.e0*(n?1.7:1):0;});
+    L.lights.forEach(o=>{o.l.intensity=on?(n?o.ni:o.di):0;o.l.distance=n?o.nd:o.dd;o.l.color.set(n?'#ffd9a6':'#ffe9cc');o.l.castShadow=!!(n&&o.sh);});}
+  Object.values(SWITCHES).forEach(s=>s.keys.forEach(q=>{const on=q.k==='master'?!!master:!!SW[q.k];q.r.rotation.x=on?-0.13:0.13;
+    q.ind.material=n&&!(q.k==='master'?master:lit(q.k))?swM.glow:swM.off;}));
+  R.shadowMap.needsUpdate=true;dirty=true;}
+function toggleLight(k,id){let t;
+  if(k==='master'){master=master?0:1;t=master?'мастер включён — свет снова слушается выключателей':'мастер выключен — весь верхний свет погашен';}
+  else{SW[k]=SW[k]?0:1;const N=LNAME[k];t=N[0]+' '+(SW[k]?N[1]:N[2]);if(SW[k]&&MAINS.has(k)&&!master)t+=', но мастер Вк5 у входа выключен';}
+  applyLights();flash((id?id+' · ':'')+t.charAt(0).toUpperCase()+t.slice(1));}
+// night: moonlight through the windows, the lamps do the rest; only walls and doors cast shadows then, to keep it quick
+const envMats=new Set(),casters=[];
+function collectNight(){S.traverse(o=>{if(!o.isMesh)return;const m=o.material;if(m&&m.isMeshStandardMaterial)envMats.add(m);
+  casters.push([o,o.castShadow,m===mat.wall||m===mat.door||!!o.userData.door]);});}
+function setNight(on){NIGHT.on=on;
+  hemi.intensity=on?0.06:0.3;hemi.color.set(on?'#8494bd':'#ffffff');hemi.groundColor.set(on?'#2a2622':'#cdbda6');
+  sun.intensity=on?0.14:1.15;sun.color.set(on?'#a4b6ff':'#fff3e2');R.toneMappingExposure=on?1.0:0.82;
+  envMats.forEach(m=>{m.envMapIntensity=on?0.05:1;});if(NIGHT.sky)NIGHT.sky.color.set(on?'#1a2233':'#ffffff');
+  casters.forEach(([o,c,st])=>{o.castShadow=on?st:c;});
+  $('nightBtn').setAttribute('aria-pressed',on);applyLights();applyVisuals();}
 
 // ---------- views
 const VIEWS={
@@ -472,24 +532,24 @@ const VIEWS={
   'spalnya':{name:'Спальня',sub:'кровать 160×200, рабочий стол у окна',mode:'walk',p:[4.15,2.95],t:[6.1,0.85,1.2],fov:70},
   'shkaf':{name:'Шкаф в спальне',sub:'у окна заглушка 24 см: крайняя дверь открывается на 90° мимо подоконника',mode:'walk',p:[4.8,2.95],t:[4.5,0.95,0.1],fov:70,flaps:{sd0:1}},
   'polki':{name:'Полки за дверью спальни',sub:'дверь закрыта; открытая дверь встаёт вдоль полок',mode:'walk',p:[4.72,2.78],t:[3.9,1.15,2.35],fov:78,doors:{bed:0}},
-  'vannaya':{name:'Ванная',sub:'ванна 170×70: кран и душ в торце у раковины, полки у двери; СМ под раковиной',mode:'walk',p:[4.43,3.97],t:[6.3,0.85,4.75],fov:74},
+  'vannaya':{name:'Ванная',sub:'ванна 170×70: кран и душ в торце у раковины; у двери полки и стиральная машина',mode:'walk',p:[4.43,3.97],t:[6.3,0.85,4.75],fov:74},
 };
 const CHIPS=[['vhod','Вход'],['prihozhaya','Прихожая'],['gostinaya','Гостиная'],['kuhnya','Кухня'],['spalnya','Спальня'],['shkaf','Шкаф у окна'],['polki','Полки за дверью'],['vannaya','Ванная'],['sverhu','Сверху']];
 const LABELS=[['Гостиная',2.55,1.3,1.45],['Кухня',3.0,1.3,4.3],['Прихожая',1.1,1.3,4.25],['Спальня',4.75,1.3,0.9],['Ванная',5.25,1.3,4.25],['Балкон',2.4,1.1,-1.0]];
 
 const st={mode:'over',cut:true,o:Object.assign({},VIEWS.obzor.o),pos:{x:1.1,z:5.1},yaw:0,pitch:0,keys:{},target:null,current:'obzor'};
-let dirty=true, anim=null, sceneBg=new THREE.Color('#E4DDD2');
+let dirty=true, anim=null, sceneBg=new THREE.Color('#E4DDD2'), nightBg=new THREE.Color('#15171c');
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 function readBg(){const v=getComputedStyle(document.documentElement).getPropertyValue('--scene').trim();if(v)sceneBg=new THREE.Color(v);applyVisuals();}
 function walkFov(){const a=vw()/vh();if(st.wf&&a>=1.2)return st.wf;return a<1?82:a<1.4?70:62;}
 function applyVisuals(){const over=st.mode==='over';
   groups.ceil.visible=!over;groups.outdoor.visible=!over;groups.capTop.visible=over&&!st.cut;groups.capCut.visible=over&&st.cut;groups.hung.visible=!(over&&st.cut);
-  R.localClippingEnabled=over&&st.cut;S.background=over?sceneBg:null;R.shadowMap.needsUpdate=true;
+  R.localClippingEnabled=over&&st.cut;S.background=over?(NIGHT.on?nightBg:sceneBg):null;R.shadowMap.needsUpdate=true;
   $('mOver').setAttribute('aria-pressed',over);$('mWalk').setAttribute('aria-pressed',!over);$('cutBtn').hidden=!over;$('cutBtn').setAttribute('aria-pressed',st.cut);
-  $('hint').textContent=over?(coarse?'Проведите пальцем — вращать · два пальца — масштаб и сдвиг · нажмите на пол — встать там'
-      :'Тяните мышью — вращать · колесо — масштаб · правая кнопка — сдвиг · нажмите на пол — встать там')
-    :(coarse?'Проведите пальцем — осмотреться · нажмите на пол — перейти туда · на дверь или дверцу шкафа — открыть или закрыть'
-      :'Тяните мышью — осмотреться · W A S D или стрелки — идти · Shift — быстрее · нажмите на пол — перейти туда, на дверь или дверцу шкафа — открыть или закрыть');
+  $('hint').textContent=over?(coarse?'Проведите пальцем — вращать · два пальца — масштаб и сдвиг · нажмите на пол — встать там, на выключатель — свет'
+      :'Тяните мышью — вращать · колесо — масштаб · правая кнопка — сдвиг · нажмите на пол — встать там, на выключатель — свет · N — ночь')
+    :(coarse?'Проведите пальцем — осмотреться · нажмите на пол — перейти туда · на дверь или дверцу — открыть, на выключатель — свет'
+      :'Тяните мышью — осмотреться · W A S D или стрелки — идти · Shift — быстрее · нажмите на пол — перейти туда, на дверь или дверцу — открыть, на выключатель — свет · N — ночь');
   labelEls.forEach(e=>e.hidden=!over);dirty=true;}
 function placeCamera(){
   if(st.mode==='over'){const o=st.o,D=o.dist*Math.max(1,Math.pow(1.3*vh()/vw(),0.75));cam.fov=40;cam.position.set(o.tx+D*Math.sin(o.phi)*Math.sin(o.theta),D*Math.cos(o.phi)+0.3,o.tz+D*Math.sin(o.phi)*Math.cos(o.theta));cam.up.set(0,1,0);cam.lookAt(o.tx,0.3,o.tz);}
@@ -540,6 +600,9 @@ function pick(cx,cy){ndc.set(cx/vw()*2-1,-(cy/vh())*2+1);ray.setFromCamera(ndc,c
     if(groups.outdoor.visible&&visibleChain(h.object)&&isOutdoor(h.object))return null;return h;}return null;}
 function isOutdoor(o){for(;o;o=o.parent)if(o===groups.outdoor)return true;return false;}
 function onTap(cx,cy){const h=pick(cx,cy);if(!h)return;
+  const u=h.object.userData;
+  if(u.sw){const s=SWITCHES[u.sw.id];let i=u.sw.i;if(i<0)i=s.keys.length>1&&s.g.worldToLocal(h.point.clone()).x>0?1:0;toggleLight(s.keys[i].k,s.id);return;}
+  if(u.lamp){toggleLight(u.lamp);return;}
   if(h.object.userData.door){const d=doors[h.object.userData.door];d.goal=d.goal>0.5?0:1;dirty=true;return;}
   if(h.object.userData.flap){const f=flaps[h.object.userData.flap];f.goal=f.goal>0.5?0:1;dirty=true;return;}const x=h.point.x,z=h.point.z;
   if(x<0||x>6.58||z<0||z>5.5)return;
@@ -572,6 +635,7 @@ el.addEventListener('wheel',e=>{e.preventDefault();anim=null;
   else{const f=clamp(-e.deltaY*0.0025,-0.4,0.4);tryMove(Math.sin(st.yaw)*f,-Math.cos(st.yaw)*f);}dirty=true;},{passive:false});
 const KEYS={KeyW:'f',ArrowUp:'f',KeyS:'b',ArrowDown:'b',KeyA:'l',KeyD:'r',ArrowLeft:'tl',KeyQ:'tl',ArrowRight:'tr',KeyE:'tr'};
 addEventListener('keydown',e=>{if(e.target&&e.target.tagName==='BUTTON'&&(e.code==='Enter'||e.code==='Space'))return;
+  if(e.code==='KeyN'&&!e.ctrlKey&&!e.metaKey&&!e.altKey&&!e.repeat){setNight(!NIGHT.on);return;}
   const k=KEYS[e.code];if(e.key==='Shift')st.keys.run=true;if(!k)return;e.preventDefault();anim=null;
   if(st.mode==='over'&&(k==='f'||k==='b'||k==='l'||k==='r')&&/^Key/.test(e.code)){enterWalkAt(st.pos.x,st.pos.z,st.yaw);}
   st.keys[k]=true;dirty=true;});
@@ -585,6 +649,7 @@ CHIPS.forEach(([k,t])=>{const b=document.createElement('button');b.type='button'
 function go(k){if(location.hash.slice(1)===k)setView(k,true);else location.hash=k;}
 $('mOver').addEventListener('click',()=>{if(st.mode!=='over')go('obzor');});
 $('mWalk').addEventListener('click',()=>{if(st.mode!=='walk')go('vhod');});
+$('nightBtn').addEventListener('click',()=>setNight(!NIGHT.on));
 $('cutBtn').addEventListener('click',()=>{st.cut=!st.cut;try{localStorage.setItem('cut3d',st.cut?'1':'0');}catch(_){}applyVisuals();});
 addEventListener('hashchange',()=>{const k=location.hash.slice(1);if(VIEWS[k])setView(k,true);});
 try{const c=localStorage.getItem('cut3d');if(c==='0')st.cut=false;}catch(_){}
@@ -613,8 +678,10 @@ function frame(now){if(!SHOT)requestAnimationFrame(frame);const dt=Math.min(0.05
 
 // ---------- start
 readBg();
-let start=location.hash.slice(1);
-if(SHOT){start=start.slice(5);const v=VIEWS[start]||VIEWS.obzor;$('cap').innerHTML=v.name+(v.sub?'<small>'+v.sub+'</small>':'');}
+let start=location.hash.slice(1),startNight=false;
+if(SHOT){start=start.slice(5);if(/~night$/.test(start)){startNight=true;start=start.slice(0,-6);}const v=VIEWS[start]||VIEWS.obzor;
+  $('cap').innerHTML=v.name+(startNight?' · ночь':'')+(v.sub&&!startNight?'<small>'+v.sub+'</small>':'');}
+collectNight();applyLights();if(startNight)setNight(true);
 if(!VIEWS[start])start='obzor';
 if(VIEWS[start].mode==='walk')st.pos={x:VIEWS[start].p[0],z:VIEWS[start].p[1]};
 setView(start,false);
