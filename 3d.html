@@ -23,7 +23,7 @@ body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--f-ui);overf
 #stage{position:fixed;inset:0}
 #stage canvas{display:block;width:100%;height:100%;touch-action:none;outline:none;cursor:grab}
 #stage canvas:active{cursor:grabbing}
-.card{position:fixed;top:calc(12px + env(safe-area-inset-top,0px));left:max(16px,env(safe-area-inset-left,0px));max-width:min(380px,calc(100% - 32px));box-sizing:border-box;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 14px;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);box-shadow:0 6px 24px var(--shadow)}
+.card{position:fixed;top:calc(12px + env(safe-area-inset-top,0px));left:max(16px,env(safe-area-inset-left,0px));max-width:min(380px,calc(100% - 92px));box-sizing:border-box;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 14px;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);box-shadow:0 6px 24px var(--shadow)}
 .card h1{margin:0;font:700 16px/1.25 var(--f-display);letter-spacing:.01em;text-wrap:balance}
 .card .view{margin:3px 0 0;font:600 13px/1.35 var(--f-ui);color:var(--accent)}
 .card .hint{margin:4px 0 0;font:400 12px/1.45 var(--f-ui);color:var(--muted)}
@@ -44,6 +44,14 @@ a.tool:hover{border-color:var(--accent)}
 a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .tool[hidden]{display:none}
 button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+/* day/night switch: round icon button in the top-right corner; shows the moon by day and the sun at night */
+.daynight{position:fixed;top:calc(12px + env(safe-area-inset-top,0px));right:max(16px,env(safe-area-inset-right,0px));width:44px;height:44px;padding:0;display:grid;place-items:center;border:1px solid var(--line);border-radius:50%;background:var(--panel);color:var(--fg);cursor:pointer;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);box-shadow:0 4px 16px var(--shadow);transition:color .2s,border-color .2s}
+.daynight:hover{border-color:var(--accent)}
+.daynight svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.daynight .sun,.daynight[aria-pressed="true"] .moon{display:none}
+.daynight[aria-pressed="true"] .sun{display:block}
+.daynight[aria-pressed="true"]{color:#F2B14C;border-color:rgba(242,177,76,.55)}
+body.shot .daynight{display:none}
 #labels{position:fixed;inset:0;pointer-events:none;overflow:hidden}
 .rl{position:absolute;left:0;top:0;transform:translate(-50%,-50%);font:600 12px/1 var(--f-display);color:var(--fg);background:var(--panel);border:1px solid var(--line);border-radius:7px;padding:5px 8px;white-space:nowrap}
 .cap{display:none}
@@ -70,9 +78,12 @@ body.shot .cap small{display:block;font:500 16px/1.4 var(--f-ui);color:var(--mut
   </div>
   <div class="views" id="views" role="group" aria-label="Точки обзора"></div>
   <button class="tool" id="cutBtn" type="button" aria-pressed="true">Срез стен</button>
-  <button class="tool" id="nightBtn" type="button" aria-pressed="false" title="Ночь (N)">Ночь</button>
   <a class="tool" href="plan.html">План</a>
 </nav>
+<button class="daynight" id="nightBtn" type="button" aria-pressed="false" aria-label="Ночь" title="Включить ночь (N)">
+  <svg class="moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+  <svg class="sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.2M12 19.8V22M4.9 4.9l1.6 1.6M17.5 17.5l1.6 1.6M2 12h2.2M19.8 12H22M4.9 19.1l1.6-1.6M17.5 6.5l1.6-1.6"/></svg>
+</button>
 <div class="cap" id="cap"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -517,7 +528,7 @@ function setNight(on){NIGHT.on=on;
   sun.intensity=on?0.14:1.15;sun.color.set(on?'#a4b6ff':'#fff3e2');R.toneMappingExposure=on?1.0:0.82;
   envMats.forEach(m=>{m.envMapIntensity=on?0.05:1;});if(NIGHT.sky)NIGHT.sky.color.set(on?'#1a2233':'#ffffff');
   casters.forEach(([o,c,st])=>{o.castShadow=on?st:c;});
-  $('nightBtn').setAttribute('aria-pressed',on);applyLights();applyVisuals();}
+  const nb=$('nightBtn');nb.setAttribute('aria-pressed',on);nb.title=on?'Включить день (N)':'Включить ночь (N)';applyLights();applyVisuals();}
 
 // ---------- views
 const VIEWS={

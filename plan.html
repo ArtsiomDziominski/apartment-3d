@@ -507,7 +507,7 @@ function setNight(on){NIGHT.on=on;
   sun.intensity=on?0.14:1.15;sun.color.set(on?'#a4b6ff':'#fff3e2');R.toneMappingExposure=on?1.0:0.82;
   envMats.forEach(m=>{m.envMapIntensity=on?0.05:1;});if(NIGHT.sky)NIGHT.sky.color.set(on?'#1a2233':'#ffffff');
   casters.forEach(([o,c,st])=>{o.castShadow=on?st:c;});
-  $('nightBtn').setAttribute('aria-pressed',on);applyLights();applyVisuals();}
+  const nb=$('nightBtn');nb.setAttribute('aria-pressed',on);nb.title=on?'Включить день (N)':'Включить ночь (N)';applyLights();applyVisuals();}
 
 
 // ---------- plan look: no ceiling, walls cut at 1.2 m with dark caps, wall-hung items hidden
