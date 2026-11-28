@@ -391,11 +391,11 @@ block(0,0.95,0.39,2.39);
  box(0.03,0.034,1.14,1.8,0.86,1.92,new THREE.MeshStandardMaterial({map:art,roughness:0.85}),{p:groups.hung,cast:false});}
 plane(1.083,2.483,0.592,2.192,0.004,mat.rug);
 // coffee table: rectangular 50x90, wood top, thin black legs, a low shelf
-box(1.308,1.808,0.40,0.43,0.947,1.837,mat.woodL);
-[[1.325,0.964],[1.761,0.964],[1.325,1.79],[1.761,1.79]].forEach(([x,z])=>box(x,x+0.032,0,0.40,z,z+0.032,mat.black));
-box(1.357,1.761,0.12,0.135,0.996,1.79,mat.woodL);
+box(1.308,1.808,0.40,0.43,0.947,1.847,mat.woodL);
+[[1.325,0.964],[1.761,0.964],[1.325,1.8],[1.761,1.8]].forEach(([x,z])=>box(x,x+0.032,0,0.40,z,z+0.032,mat.black));
+box(1.357,1.761,0.12,0.135,0.996,1.8,mat.woodL);
 box(1.45,1.68,0.43,0.47,1.12,1.28,M('#8c6b52',0.8));cyl(1.62,0.47,1.55,0.04,0.09,mat.ceramic);
-block(1.31,1.81,0.95,1.84);
+block(1.31,1.81,0.95,1.85);
 // TV stand, floating: two drawers 70 cm, push to open (click), sliding out towards the room
 {const m=mat.tvStand,c=M('#5a524a',0.7);box(3.1,3.48,0.15,0.168,0.692,2.092,m);box(3.462,3.48,0.168,0.45,0.692,2.092,m,{cast:false});
  box(3.1,3.48,0.168,0.45,0.692,0.71,m);box(3.1,3.48,0.168,0.45,2.074,2.092,m);box(3.118,3.462,0.168,0.45,1.383,1.401,m);
@@ -559,13 +559,13 @@ sph(2.92,0.98,5.23,0.045,0.045,0.045,M('#d9822b',0.6));sph(2.99,0.98,5.27,0.045,
 cyl(2.69,0.97,5.43,0.03,0.16,M('#e9e4da',0.4));
 
 // ---------- bedroom
-wardIn(3.58,4.18,[[0,1.0,'shelf'],[1.0,2.0,'hang']],9);block(3.58,4.18,0,2.0);
+wardIn(3.58,4.16,[[0,1.0,'shelf'],[1.0,2.0,'hang']],9);block(3.58,4.18,0,2.0);
 // hidden inside the wardrobe: thickens the partition at the window corner, so at night the bedroom lamps' shadow maps don't leak a line of light into the living room
 box(3.58,3.72,0,CEIL,0,0.14,mat.wall,{cast:true});
 // fixed filler 24 cm at the window wall: the sill sticks out 20 cm, so the first door opens past it
-box(4.18,4.198,0.02,TOPC-0.02,0,0.238,mat.ward);
-[[0.24,0.62,1],[0.62,1.0,0],[1.0,1.5,1],[1.5,2.0,0]].forEach(([a,b,l],i)=>swing('sd'+i,4.18,a,b,l,mat.ward,i?1.65:Math.PI/2));
-box(3.58,4.2,TOPC,CEIL,0,2.0,mat.ward,{p:groups.hung});
+box(4.16,4.178,0.02,TOPC-0.02,0,0.238,mat.ward);
+[[0.24,0.62,1],[0.62,1.0,0],[1.0,1.5,1],[1.5,2.0,0]].forEach(([a,b,l],i)=>swing('sd'+i,4.16,a,b,l,mat.ward,i?1.65:Math.PI/2));
+box(3.58,4.18,TOPC,CEIL,0,2.0,mat.ward,{p:groups.hung});
 // open shelves at the wardrobe end, cut at 45° along the opened door
 {const P=[[3.6,2.0],[4.18,2.0],[4.18,2.128],[3.658,2.65],[3.6,2.65]];
  box(3.58,3.6,0,TOPC,2.0,2.65,mat.wardC);box(3.6,3.658,0,TOPC,2.63,2.65,mat.wardC);
@@ -640,7 +640,7 @@ lampHit(cyl(6.45,0.76,1.05,0.06,0.02,mat.black),'desk');lampHit(cyl(6.45,0.95,1.
 {const tw=(x1,x2,z1,z2,L)=>{const m=mat.wallTile.clone();m.map=rep(wallTileT,L/0.3,CEIL/0.6);m.clippingPlanes=[clip];box(x1,x2,0,CEIL,z1,z2,m,{cast:false});};
  tw(4.495,6.58,3.565,3.57,2.085);tw(6.575,6.58,3.565,5.5,1.935);tw(4.495,6.58,5.495,5.5,2.085);tw(4.495,4.5,4.375,5.5,1.125);}
 // toilet
-box(4.67,5.01,0.38,0.8,5.32,5.48,mat.ceramic);cyl(4.84,0.2,5.08,0.15,0.4,mat.ceramic,{rt:0.19,sz:1.45});cyl(4.84,0.415,5.07,0.19,0.03,mat.ceramic,{sz:1.5});
+box(4.67,5.01,0.38,0.8,5.32,5.48,mat.ceramic);cyl(4.84,0.2,5.09,0.15,0.4,mat.ceramic,{rt:0.19,sz:1.2});cyl(4.84,0.415,5.085,0.19,0.03,mat.ceramic,{sz:1.237});
 cyl(4.84,0.805,5.4,0.03,0.01,mat.chrome);block(4.65,5.03,4.85,5.5);
 // wall-hung vanity under the sink: two drawers
 {const m=mat.ward,c=mat.wardC;box(5.27,5.288,0.32,0.78,4.95,5.49,m);box(5.812,5.83,0.32,0.78,4.95,5.49,m);box(5.288,5.812,0.32,0.338,4.95,5.49,m);
