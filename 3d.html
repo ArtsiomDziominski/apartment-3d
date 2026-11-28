@@ -58,7 +58,30 @@ body.shot .daynight{display:none}
 body.shot .card,body.shot .dock{display:none}
 body.shot .cap{display:block;position:fixed;left:26px;top:22px;background:var(--panel);color:var(--fg);border-radius:10px;padding:9px 18px;font:700 24px/1.25 var(--f-display);box-shadow:0 4px 16px var(--shadow)}
 body.shot .cap small{display:block;font:500 16px/1.4 var(--f-ui);color:var(--muted);margin-top:2px}
-@media (max-width:560px){.card{padding:8px 12px}.card .hint{font-size:11.5px}.seg button{padding:8px 12px}}
+.tool[aria-expanded="true"]{border-color:var(--accent);color:var(--accent)}
+/* finishes panel: swatches for wall paint, floor and fronts; opens just above the dock */
+.pal{position:fixed;left:50%;transform:translateX(-50%);bottom:84px;width:min(400px,calc(100% - 32px));box-sizing:border-box;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px 14px 14px;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);box-shadow:0 8px 28px var(--shadow)}
+.pal[hidden]{display:none}
+@media (min-width:900px){.pal{left:auto;right:max(16px,env(safe-area-inset-right,0px));transform:none;width:380px}}
+.pal-h{display:flex;align-items:center;gap:4px}
+.pal-h h2{margin:0;flex:1;font:700 14px/1.2 var(--f-display)}
+.pal-h button{border:0;background:transparent;color:var(--accent);font:600 12.5px/1 var(--f-ui);padding:8px 6px;border-radius:8px;cursor:pointer}
+.pal-h .x{color:var(--muted);font-size:22px;padding:2px 8px 4px}
+.pal-g{margin-top:8px}
+.pal-g p{margin:0 0 5px;font:500 12.5px/1.3 var(--f-ui);color:var(--muted)}
+.pal-g p b{color:var(--fg);font-weight:600}
+.sws{display:flex;flex-wrap:wrap;gap:6px}
+.sws button{width:38px;height:38px;padding:0;border-radius:50%;border:2px solid transparent;background:none;cursor:pointer;display:grid;place-items:center}
+.sws button i{display:block;width:28px;height:28px;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(0,0,0,.2)}
+.sws button:hover{border-color:var(--line)}
+.sws button[aria-checked="true"]{border-color:var(--accent)}
+.pal-n{margin:10px 0 0;font:400 11.5px/1.4 var(--f-ui);color:var(--muted)}
+/* ruler: crosshair over the model, the reading sits at the middle of the measured line */
+body.ruling #stage canvas{cursor:crosshair}
+.rl.rul{background:var(--accent);color:var(--accent-fg);border-color:transparent;font:700 13px/1.2 var(--f-ui);text-align:center;padding:5px 9px;box-shadow:0 2px 10px var(--shadow)}
+.rl.rul small{display:block;font:500 11px/1.3 var(--f-ui);opacity:.92;margin-top:1px}
+body.shot .pal{display:none}
+@media (max-width:560px){.card{padding:8px 12px}.card .hint{font-size:11.5px}.seg button{padding:8px 12px}.tool{padding:9px 12px}}
 </style>
 </head>
 <body>
@@ -78,8 +101,14 @@ body.shot .cap small{display:block;font:500 16px/1.4 var(--f-ui);color:var(--mut
   </div>
   <div class="views" id="views" role="group" aria-label="Точки обзора"></div>
   <button class="tool" id="cutBtn" type="button" aria-pressed="true">Срез стен</button>
+  <button class="tool" id="palBtn" type="button" aria-expanded="false" aria-controls="pal">Цвета</button>
+  <button class="tool" id="rulBtn" type="button" aria-pressed="false">Рулетка</button>
   <a class="tool" href="plan.html">План</a>
 </nav>
+<section class="pal" id="pal" hidden aria-labelledby="palTitle">
+  <div class="pal-h"><h2 id="palTitle">Цвета отделки</h2><button type="button" id="palReset">Как в проекте</button><button type="button" class="x" id="palClose" aria-label="Закрыть">×</button></div>
+  <div id="palGroups"></div>
+</section>
 <button class="daynight" id="nightBtn" type="button" aria-pressed="false" aria-label="Ночь" title="Включить ночь (N)">
   <svg class="moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
   <svg class="sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.2M12 19.8V22M4.9 4.9l1.6 1.6M17.5 17.5l1.6 1.6M2 12h2.2M19.8 12H22M4.9 19.1l1.6-1.6M17.5 6.5l1.6-1.6"/></svg>
@@ -120,12 +149,15 @@ let seed = 11; const rnd = () => { seed = (seed*16807) % 2147483647; return (see
 function tex(w,h,draw){const c=document.createElement('canvas');c.width=w;c.height=h;draw(c.getContext('2d'),w,h);
   const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.encoding=THREE.sRGBEncoding;t.anisotropy=8;return t;}
 function rep(t,rx,ry){const c=t.clone();c.needsUpdate=true;c.wrapS=c.wrapT=THREE.RepeatWrapping;c.repeat.set(rx,ry);return c;}
-function lam(g,w,h){const rows=12,rh=h/rows;for(let i=0;i<rows;i++){const off=(i*197)%512;
-  for(let x=-off;x<w;x+=512){g.fillStyle=`hsl(${32+rnd()*5},${32+rnd()*10}%,${73+rnd()*7}%)`;g.fillRect(x,i*rh,512,rh);
-    for(let k=0;k<14;k++){g.strokeStyle=`rgba(120,85,50,${0.04+rnd()*0.06})`;g.lineWidth=1+rnd()*1.5;const y=i*rh+rnd()*rh;
-      g.beginPath();g.moveTo(x,y);g.bezierCurveTo(x+170,y+(rnd()-.5)*8,x+340,y+(rnd()-.5)*8,x+512,y+(rnd()-.5)*6);g.stroke();}
-    g.fillStyle='rgba(110,80,50,.35)';g.fillRect(x,i*rh,2,rh);}
-  g.fillStyle='rgba(110,80,50,.3)';g.fillRect(0,i*rh,w,2);}}
+// laminate boards in a tone: hue, saturation and lightness as [from, spread], grain and seam colours as 'r,g,b'; r is the random source
+const LAM0={h:[32,5],s:[32,10],l:[73,7],grain:'120,85,50',seam:'110,80,50'};
+function lamTone(t,r){return (g,w,h)=>{const rows=12,rh=h/rows;for(let i=0;i<rows;i++){const off=(i*197)%512;
+  for(let x=-off;x<w;x+=512){g.fillStyle=`hsl(${t.h[0]+r()*t.h[1]},${t.s[0]+r()*t.s[1]}%,${t.l[0]+r()*t.l[1]}%)`;g.fillRect(x,i*rh,512,rh);
+    for(let k=0;k<14;k++){g.strokeStyle=`rgba(${t.grain},${0.04+r()*0.06})`;g.lineWidth=1+r()*1.5;const y=i*rh+r()*rh;
+      g.beginPath();g.moveTo(x,y);g.bezierCurveTo(x+170,y+(r()-.5)*8,x+340,y+(r()-.5)*8,x+512,y+(r()-.5)*6);g.stroke();}
+    g.fillStyle=`rgba(${t.seam},.35)`;g.fillRect(x,i*rh,2,rh);}
+  g.fillStyle=`rgba(${t.seam},.3)`;g.fillRect(0,i*rh,w,2);}};}
+const lam=lamTone(LAM0,()=>rnd());
 function tileDraw(base,grout){return (g,w,h)=>{g.fillStyle=base;g.fillRect(0,0,w,h);
   for(let i=0;i<3000;i++){g.fillStyle=`rgba(${rnd()<.5?255:140},${rnd()<.5?255:140},150,.05)`;g.fillRect(rnd()*w,rnd()*h,2,2);}
   g.fillStyle=grout;g.fillRect(0,0,w,3);g.fillRect(0,0,3,h);};}
@@ -142,15 +174,16 @@ const marbleT=tex(1024,512,marbleDraw);
 const M=(c,r=0.8,m=0,x={})=>new THREE.MeshStandardMaterial(Object.assign({color:c,roughness:r,metalness:m},x));
 const clip=new THREE.Plane(new THREE.Vector3(0,-1,0),CUT);
 const mat={
-  wall:M('#e8e2d8',0.95), ceil:M('#f8f7f4',0.6), capOld:M('#2e2c29',0.9), capNew:M('#b5562f',0.85),
+  // project finishes as real codes: walls NCS S 1002-Y50R; kitchen base RAL 7021, wall cabinets and wardrobes RAL 9001, TV stand RAL 7022
+  wall:M('#E6DDD8',0.95), ceil:M('#f8f7f4',0.6), capOld:M('#2e2c29',0.9), capNew:M('#b5562f',0.85),
   pvc:M('#f6f6f4',0.35), glass:new THREE.MeshStandardMaterial({color:'#d6e6ee',roughness:0.05,metalness:0.1,transparent:true,opacity:0.2,depthWrite:false,side:THREE.DoubleSide}),
-  graph:M('#2b2b2e',0.55), plinth:M('#1d1d1f',0.8), black:M('#161616',0.35,0.3), chrome:M('#d4d7da',0.2,0.9), steel:M('#b4b8bb',0.3,0.75),
-  upper:M('#ebe6dc',0.45), upperC:M('#d8d2c6',0.6), panel:M('#3b3b3f',0.6), appl:M('#efefec',0.35), fridge:M('#f1f1ee',0.3),
+  graph:M('#2E3234',0.55), plinth:M('#1d1d1f',0.8), black:M('#161616',0.35,0.3), chrome:M('#d4d7da',0.2,0.9), steel:M('#b4b8bb',0.3,0.75),
+  upper:M('#EFEBDC',0.45), upperC:M('#d8d2c6',0.6), panel:M('#2E3234',0.6), appl:M('#efefec',0.35), fridge:M('#f1f1ee',0.3),
   woodL:M('#d8bb92',0.55), wood:M('#c49a68',0.6), oak:M('#b88a5a',0.6),
   sofa:M('#9fb0bd',0.95), sofaD:M('#8a9cab',0.95), rug:M('#e2d8c7',1), linen:M('#ece5d9',0.95,0,{side:THREE.DoubleSide}),
   bedBase:M('#cbb698',0.9), sheet:M('#f5f3ef',0.95), duvet:M('#dccfba',0.95), head:M('#6e5b49',0.9), throwM:M('#b8714f',0.95),
-  ward:M('#efe9df',0.5), wardC:M('#e1dacd',0.6), ceramic:M('#fbfbfa',0.12), seat:M('#d9c7ab',0.9), back:M('#a88d6a',0.85),
-  tv:M('#0c0d0f',0.25,0.2), tvStand:M('#46403a',0.6), door:M('#f3f0ea',0.45), doorEnt:M('#5a534c',0.5),
+  ward:M('#EFEBDC',0.5), wardC:M('#e1dacd',0.6), ceramic:M('#fbfbfa',0.12), seat:M('#d9c7ab',0.9), back:M('#a88d6a',0.85),
+  tv:M('#0c0d0f',0.25,0.2), tvStand:M('#4B4D46',0.6), door:M('#f3f0ea',0.45), doorEnt:M('#5a534c',0.5),
   green:M('#5f7f4f',0.8), greenD:M('#486a3c',0.8), pot:M('#cfc6b8',0.7), hobGlass:M('#121212',0.1,0.3),
   led:M('#ffffff',0.5,0,{emissive:'#fff1d6',emissiveIntensity:1}), shade:M('#f3ead8',0.8,0,{emissive:'#ffe1ad',emissiveIntensity:0.55,side:THREE.DoubleSide}),
   bulb:M('#ffffff',0.4,0,{emissive:'#fff2d8',emissiveIntensity:1.2}), mirror:M('#d3dde1',0.06,0.15),
@@ -199,8 +232,9 @@ function wallSeg(ax,az,bx,bz,th,y1,y2,isNew){seg(ax,az,bx,bz,th,y1,y2,mat.wall,{
   caps((a,b,cm,p)=>seg(ax,az,bx,bz,th+0.002,a,b,cm,{p,cast:false}),y1,y2,isNew);}
 
 // ---------- floors
-plane(0,6.58,0,5.5,0,new THREE.MeshStandardMaterial({map:rep(lamT,6.58/2.4,5.5/2.4),roughness:0.55}));
-plane(0.6,1.62,5.5,5.75,0,mat.wall);
+const floorM=new THREE.MeshStandardMaterial({map:rep(lamT,6.58/2.4,5.5/2.4),roughness:0.55});
+plane(0,6.58,0,5.5,0,floorM);
+plane(0.6,1.62,5.5,5.75,0,M('#e8e2d8',0.95));
 const tileM=(w,d)=>new THREE.MeshStandardMaterial({map:rep(floorTileT,w/0.3,d/0.3),roughness:0.3});
 plane(1.62,4.365,4.375,5.5,0.002,tileM(2.745,1.125));
 plane(4.365,6.58,3.565,5.5,0.002,tileM(2.215,1.935));
@@ -797,6 +831,7 @@ const CHIPS=[['vhod','Вход'],['prihozhaya','Прихожая'],['gostinaya',
 const LABELS=[['Гостиная',2.55,1.3,1.45],['Кухня',3.0,1.3,4.3],['Прихожая',1.1,1.3,4.25],['Спальня',4.75,1.3,0.9],['Ванная',5.25,1.3,4.25],['Балкон',2.4,1.1,-1.0]];
 
 const st={mode:'over',cut:true,o:Object.assign({},VIEWS.obzor.o),pos:{x:1.1,z:5.1},yaw:0,pitch:0,keys:{},target:null,current:'obzor'};
+const RUL={on:false,a:null,b:null,hover:null,mx:0,my:0,want:false};   // ruler: points a and b, the live end under the mouse
 let dirty=true, anim=null, sceneBg=new THREE.Color('#E4DDD2'), nightBg=new THREE.Color('#15171c');
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 function readBg(){const v=getComputedStyle(document.documentElement).getPropertyValue('--scene').trim();if(v)sceneBg=new THREE.Color(v);applyVisuals();}
@@ -809,6 +844,8 @@ function applyVisuals(){const over=st.mode==='over';
       :'Тяните мышью — вращать · колесо — масштаб · правая кнопка — сдвиг · нажмите на пол — встать там, на выключатель — свет, на собачку — погладить · N — ночь')
     :(coarse?'Проведите пальцем — осмотреться · нажмите на пол — перейти туда · на дверь или дверцу — открыть, на выключатель — свет, на собачку — погладить, на розетку — для чего она'
       :'Тяните мышью — осмотреться · W A S D или стрелки — идти · Shift — быстрее · нажмите на пол — перейти туда, на дверь или дверцу — открыть, на выключатель — свет, на собачку — погладить, на розетку — для чего она · N — ночь');
+  if(RUL.on)$('hint').textContent='Рулетка: нажмите на первую точку, потом на вторую — покажу расстояние; следующее нажатие начнёт новый замер'
+    +(coarse?'':' · с Shift — строго по горизонтали или вертикали · Esc — выйти');
   labelEls.forEach(e=>e.hidden=!over);dirty=true;}
 function placeCamera(){
   if(st.mode==='over'){const o=st.o,D=o.dist*Math.max(1,Math.pow(1.3*vh()/vw(),0.75));cam.fov=40;cam.position.set(o.tx+D*Math.sin(o.phi)*Math.sin(o.theta),D*Math.cos(o.phi)+0.3,o.tz+D*Math.sin(o.phi)*Math.cos(o.theta));cam.up.set(0,1,0);cam.lookAt(o.tx,0.3,o.tz);}
@@ -980,6 +1017,7 @@ function pick(cx,cy){ndc.set(cx/vw()*2-1,-(cy/vh())*2+1);ray.setFromCamera(ndc,c
     if(groups.outdoor.visible&&visibleChain(h.object)&&isOutdoor(h.object))return null;return h;}return null;}
 function isOutdoor(o){for(;o;o=o.parent)if(o===groups.outdoor)return true;return false;}
 function onTap(cx,cy){const h=pick(cx,cy);if(!h)return;
+  if(RUL.on){rulerTap(h.point);return;}
   const u=h.object.userData;
   if(u.dog){dog.pet();return;}
   if(u.sw){const s=SWITCHES[u.sw.id];let i=u.sw.i;if(i<0)i=s.keys.length>1&&s.g.worldToLocal(h.point.clone()).x>0?1:0;toggleLight(s.keys[i].k,s.id);return;}
@@ -1017,6 +1055,7 @@ el.addEventListener('wheel',e=>{e.preventDefault();anim=null;
   else{const f=clamp(-e.deltaY*0.0025,-0.4,0.4);tryMove(Math.sin(st.yaw)*f,-Math.cos(st.yaw)*f);}dirty=true;},{passive:false});
 const KEYS={KeyW:'f',ArrowUp:'f',KeyS:'b',ArrowDown:'b',KeyA:'l',KeyD:'r',ArrowLeft:'tl',KeyQ:'tl',ArrowRight:'tr',KeyE:'tr'};
 addEventListener('keydown',e=>{if(e.target&&e.target.tagName==='BUTTON'&&(e.code==='Enter'||e.code==='Space'))return;
+  if(e.key==='Escape'){if(!$('pal').hidden){openPal(false);$('palBtn').focus();}else if(RUL.on)setRuler(false);return;}
   if(e.code==='KeyN'&&!e.ctrlKey&&!e.metaKey&&!e.altKey&&!e.repeat){setNight(!NIGHT.on);return;}
   const k=KEYS[e.code];if(e.key==='Shift')st.keys.run=true;if(!k)return;e.preventDefault();anim=null;
   if(st.mode==='over'&&(k==='f'||k==='b'||k==='l'||k==='r')&&/^Key/.test(e.code)){enterWalkAt(st.pos.x,st.pos.z,st.yaw);}
@@ -1038,6 +1077,105 @@ try{const c=localStorage.getItem('cut3d');if(c==='0')st.cut=false;}catch(_){}
 const mq=window.matchMedia&&matchMedia('(prefers-color-scheme: dark)');if(mq&&mq.addEventListener)mq.addEventListener('change',readBg);
 new MutationObserver(readBg).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
 
+// ---------- colours: real finishes to try on — wall paint by NCS, laminate by Egger decor, fronts by RAL or Egger decor; the first in each row is the project's
+// screen values: NCS from plan-home.com (manufacturers' RGB), RAL from the RAL Classic list; Egger publishes no colour values, so wood tones are approximate
+// walls: c is the paint (swatch), s what the wall material gets. The rooms are lit brightly and the tone curve squeezes pale paints about fourfold,
+// so s is fitted on renders to keep the paints apart on screen as they are on the fan; the project's paint stays as it is
+const OAK={wood:true};
+const PAL={
+  wall:{t:'Стены',o:[
+    {n:'NCS S 1002-Y50R',d:'тёплый светлый грейж',c:'#E6DDD8',s:'#E6DDD8'},{n:'NCS S 0502-Y',d:'тёплый белый',c:'#F7EFE4',s:'#FFFFFF'},
+    {n:'NCS S 1005-Y20R',d:'светлый бежевый',c:'#E7DBC5',s:'#EAD6A7'},{n:'NCS S 1502-Y50R',d:'грейж',c:'#D6CDC8',s:'#B1AEAD'},
+    {n:'NCS S 2005-G60Y',d:'серо-оливковый, шалфей',c:'#C6C4B7',s:'#8E998C'},{n:'NCS S 1502-B',d:'серо-голубой',c:'#CBD1D1',s:'#97B8C4'},
+    {n:'NCS S 1005-Y80R',d:'пудровый',c:'#E6D7D0',s:'#E6C9C1'}]},
+  floor:{t:'Пол',o:[
+    {n:'Egger EPL183',d:'ламинат «Дуб Шерман светлый»',tone:LAM0,c:'#dcc6a4'},
+    {n:'Egger EPL190',d:'ламинат «Дуб Мелба натуральный»',tone:{h:[33,5],s:[27,8],l:[60,7],grain:'100,74,48',seam:'90,68,46'},c:'#b89c78'},
+    {n:'Egger EPL199',d:'ламинат «Дуб Бейфорд белый»',tone:{h:[36,8],s:[12,6],l:[80,6],grain:'125,112,95',seam:'115,104,92'},c:'#d9d2c6'},
+    {n:'Egger EPL195',d:'ламинат «Дуб Марибор серый»',tone:{h:[32,8],s:[6,4],l:[60,8],grain:'72,68,62',seam:'62,58,54'},c:'#9d9890'},
+    {n:'Egger EPL044',d:'ламинат «Дуб Хантон тёмный»',tone:{h:[28,5],s:[20,7],l:[31,6],grain:'38,28,20',seam:'30,22,16'},c:'#5f4c3d'}]},
+  front:{t:'Фасады',o:[
+    {n:'RAL 7021 + RAL 9001',d:'низ кухни чёрно-серый, верх и шкафы кремово-белые',p:{lower:'#2E3234',upper:'#EFEBDC',ward:'#EFEBDC',tv:'#4B4D46',panel:'#2E3234'}},
+    {n:'RAL 9010',d:'все фасады чисто-белые',p:{lower:'#F7F9EF',upper:'#F7F9EF',ward:'#F7F9EF',tv:'#F7F9EF',panel:'#F7F9EF'}},
+    {n:'Egger H1145 + RAL 9001',d:'низ — дуб Бардолино натуральный, верх и шкафы кремово-белые',p:{lower:OAK,upper:'#EFEBDC',ward:'#EFEBDC',tv:OAK,panel:OAK}},
+    {n:'RAL 7033 + RAL 9001',d:'низ цементно-серый, верх и шкафы кремово-белые',p:{lower:'#818979',upper:'#EFEBDC',ward:'#EFEBDC',tv:'#818979',panel:'#818979'}},
+    {n:'RAL 5008 + RAL 9001',d:'низ серо-синий, верх и шкафы кремово-белые',p:{lower:'#313C48',upper:'#EFEBDC',ward:'#EFEBDC',tv:'#313C48',panel:'#313C48'}},
+    {n:'RAL 7044 + RAL 9001',d:'низ шёлковисто-серый, верх и шкафы кремово-белые',p:{lower:'#BDBDB2',upper:'#EFEBDC',ward:'#EFEBDC',tv:'#BDBDB2',panel:'#BDBDB2'}}]},
+};
+const palSel={wall:0,floor:0,front:0},floorTex=[floorM.map];
+let veneerT=null;
+function veneer(){if(veneerT)return veneerT;let s=7;const r=()=>{s=(s*16807)%2147483647;return (s-1)/2147483646;};
+  veneerT=tex(256,1024,(g,w,h)=>{g.fillStyle='#b39673';g.fillRect(0,0,w,h);
+    for(let k=0;k<26;k++){g.fillStyle=`rgba(${140+r()*36},${108+r()*28},${74+r()*22},${0.10+r()*0.15})`;g.fillRect(r()*w,0,6+r()*30,h);}
+    for(let k=0;k<80;k++){let x=r()*w;g.strokeStyle=`rgba(${92+r()*26},${68+r()*18},${44+r()*14},${0.08+r()*0.16})`;g.lineWidth=0.6+r()*2;g.beginPath();g.moveTo(x,0);
+      for(let y=64;y<=h;y+=64){x+=(r()-.5)*7;g.lineTo(x,y);}g.stroke();}
+    for(let k=0;k<160;k++){g.fillStyle=`rgba(68,50,34,${0.12+r()*0.2})`;g.fillRect(r()*w,r()*h,1+r()*1.5,4+r()*14);}});
+  return veneerT;}
+function setFront(m,v){if(v.wood){if(m.map!==veneer()){m.map=veneer();m.needsUpdate=true;}m.color.set('#ffffff');}
+  else{if(m.map){m.map=null;m.needsUpdate=true;}m.color.set(v);}}
+function applyPal(){mat.wall.color.set(PAL.wall.o[palSel.wall].s);
+  const fi=palSel.floor;if(!floorTex[fi]){let s=11;const r=()=>{s=(s*16807)%2147483647;return (s-1)/2147483646;};
+    floorTex[fi]=rep(tex(1024,1024,lamTone(PAL.floor.o[fi].tone,r)),6.58/2.4,5.5/2.4);}
+  floorM.map=floorTex[fi];
+  const p=PAL.front.o[palSel.front].p;setFront(mat.graph,p.lower);setFront(mat.upper,p.upper);setFront(mat.ward,p.ward);setFront(mat.tvStand,p.tv);setFront(mat.panel,p.panel);
+  dirty=true;}
+const palText=k=>{const g=PAL[k],o=g.o[palSel[k]];return `${g.t}: <b>${o.n}</b> — ${o.d}${palSel[k]?'':' · в проекте'}`;};
+const swatchBg=(k,o)=>{if(k!=='front')return o.c;const lo=o.p.lower.wood?'#ae9170':o.p.lower;return `linear-gradient(180deg,${o.p.upper} 0 48%,${lo} 52% 100%)`;};
+function buildPal(){const box=$('palGroups');
+  for(const k in PAL){const w=document.createElement('div');w.className='pal-g';
+    const p=document.createElement('p');p.id='pl-'+k;w.appendChild(p);
+    const row=document.createElement('div');row.className='sws';row.setAttribute('role','radiogroup');row.setAttribute('aria-labelledby','pl-'+k);
+    PAL[k].o.forEach((o,i)=>{const b=document.createElement('button');b.type='button';b.setAttribute('role','radio');
+      b.setAttribute('aria-label',`${o.n}, ${o.d}${i?'':', как в проекте'}`);b.title=`${o.n} — ${o.d}`;
+      const s=document.createElement('i');s.style.background=swatchBg(k,o);b.appendChild(s);
+      b.addEventListener('click',()=>{palSel[k]=i;savePal();applyPal();syncPal();});row.appendChild(b);});
+    w.appendChild(row);box.appendChild(w);}
+  const n=document.createElement('p');n.className='pal-n';
+  n.textContent='Цвета на экране приблизительные. Перед покупкой сверьте с веером NCS или RAL и с образцом декора в магазине.';box.appendChild(n);syncPal();}
+function syncPal(){for(const k in PAL){$('pl-'+k).innerHTML=palText(k);
+  document.querySelectorAll(`[aria-labelledby="pl-${k}"] button`).forEach((b,i)=>b.setAttribute('aria-checked',i===palSel[k]));}}
+function savePal(){try{localStorage.setItem('pal3d',JSON.stringify(palSel));}catch(_){}}
+const dockEl=document.querySelector('.dock');
+function openPal(on){$('pal').hidden=!on;$('palBtn').setAttribute('aria-expanded',on);if(on)$('pal').style.bottom=(dockEl.offsetHeight+4)+'px';}
+$('palBtn').addEventListener('click',()=>openPal($('pal').hidden));
+$('palClose').addEventListener('click',()=>{openPal(false);$('palBtn').focus();});
+$('palReset').addEventListener('click',()=>{palSel.wall=palSel.floor=palSel.front=0;savePal();applyPal();syncPal();});
+addEventListener('resize',()=>{if(!$('pal').hidden)openPal(true);});
+buildPal();
+if(!SHOT){try{const s=JSON.parse(localStorage.getItem('pal3d')||'{}');for(const k in palSel)if(PAL[k].o[s[k]])palSel[k]=s[k];}catch(_){}
+  if(palSel.wall||palSel.floor||palSel.front){applyPal();syncPal();}}
+
+// ---------- ruler: tap two points on any surface, the reading shows at the middle; with Shift the second point keeps to one axis
+const rulM=new THREE.MeshBasicMaterial({color:'#B5562F',depthTest:false,depthWrite:false,transparent:true,toneMapped:false});
+const rulW=new THREE.MeshBasicMaterial({color:'#ffffff',depthTest:false,depthWrite:false,transparent:true,toneMapped:false});
+const rulG=new THREE.Group();rulG.visible=false;S.add(rulG);
+function rulDot(){const g=new THREE.Group(),o=new THREE.Mesh(unitS,rulM),i=new THREE.Mesh(unitS,rulW);i.scale.setScalar(0.5);o.renderOrder=20;i.renderOrder=21;g.add(o,i);rulG.add(g);return g;}
+const rulA=rulDot(),rulB=rulDot(),rulLine=new THREE.Mesh(new THREE.CylinderGeometry(1,1,1,10,1,true),rulM);rulLine.renderOrder=19;rulG.add(rulLine);
+rulG.traverse(o=>{if(o.isMesh){o.raycast=()=>{};o.castShadow=false;o.receiveShadow=false;}});
+const rulEl=document.createElement('div');rulEl.className='rl rul';rulEl.hidden=true;$('labels').appendChild(rulEl);
+const UPV=new THREE.Vector3(0,1,0);
+function rulSnap(p){p=p.clone();if(!RUL.a||!st.keys.run||RUL.b)return p;const d=p.clone().sub(RUL.a),ax=Math.abs(d.x),ay=Math.abs(d.y),az=Math.abs(d.z);
+  if(ax>=ay&&ax>=az){p.y=RUL.a.y;p.z=RUL.a.z;}else if(ay>=az){p.x=RUL.a.x;p.z=RUL.a.z;}else{p.x=RUL.a.x;p.y=RUL.a.y;}return p;}
+function rulerTap(p){if(!RUL.a||RUL.b){RUL.a=p.clone();RUL.b=null;}else RUL.b=rulSnap(p);RUL.hover=null;dirty=true;}
+function setRuler(on){RUL.on=on;RUL.a=RUL.b=RUL.hover=null;$('rulBtn').setAttribute('aria-pressed',on);document.body.classList.toggle('ruling',on);applyVisuals();}
+$('rulBtn').addEventListener('click',()=>setRuler(!RUL.on));
+el.addEventListener('pointermove',e=>{if(!RUL.on||!RUL.a||RUL.b||ptrs.size||e.pointerType!=='mouse')return;RUL.mx=e.clientX;RUL.my=e.clientY;RUL.want=true;});
+el.addEventListener('pointerleave',()=>{if(RUL.hover){RUL.hover=null;dirty=true;}});
+const lenTxt=v=>{const c=Math.round(v*100);return c>=100?`${Math.floor(c/100)} м${c%100?' '+c%100+' см':''}`:`${c} см`;};
+// runs before the render, so the dots and the line are in the same frame; the camera matrix is brought up to date for the label
+function rulerDraw(){const a=RUL.a,b=RUL.b||RUL.hover;rulG.visible=RUL.on&&!!a;if(!rulG.visible){rulEl.hidden=true;return;}
+  cam.updateMatrixWorld();
+  const px=p=>2*cam.position.distanceTo(p)*Math.tan(cam.fov*Math.PI/360)/vh();
+  rulA.position.copy(a);rulA.scale.setScalar(px(a)*6);rulB.visible=rulLine.visible=!!b;
+  if(!b){rulEl.hidden=true;return;}
+  rulB.position.copy(b);rulB.scale.setScalar(px(b)*6);
+  const d=b.clone().sub(a),L=d.length(),mid=a.clone().add(b).multiplyScalar(0.5);
+  if(L>1e-4){rulLine.position.copy(mid);rulLine.scale.set(px(mid)*1.6,L,px(mid)*1.6);rulLine.quaternion.setFromUnitVectors(UPV,d.clone().normalize());}
+  tmpV.copy(mid).project(cam);if(tmpV.z>1||L<0.005){rulEl.hidden=true;return;}
+  const hz=Math.hypot(d.x,d.z),vt=Math.abs(d.y);
+  rulEl.innerHTML=lenTxt(L)+(hz>=0.02&&vt>=0.02?`<small>по горизонтали ${lenTxt(hz)} · по высоте ${lenTxt(vt)}</small>`:'');
+  rulEl.hidden=false;rulEl.style.transform=`translate(${((tmpV.x+1)/2*vw()).toFixed(1)}px,${((1-tmpV.y)/2*vh()).toFixed(1)}px) translate(-50%,-135%)`;}
+
 // ---------- loop
 let last=performance.now();
 function frame(now){if(!SHOT)requestAnimationFrame(frame);const dt=Math.min(0.05,(now-last)/1000);last=now;
@@ -1057,13 +1195,19 @@ function frame(now){if(!SHOT)requestAnimationFrame(frame);const dt=Math.min(0.05
     if(dirty)placeCamera();}
   else{const k=st.keys;const tr=(k.tr?1:0)-(k.tl?1:0),z=(k.b?1:0)-(k.f?1:0);if(tr||z){st.o.theta-=tr*1.2*dt;st.o.dist=clamp(st.o.dist*Math.exp(z*dt*1.2),3,28);dirty=true;}if(dirty)placeCamera();}
   dog.tick(dt,now);
-  if(dirty){dirty=false;try{R.render(S,cam);placeLabels();}catch(err){console.warn(err);}}}
+  if(RUL.want){RUL.want=false;const h=pick(RUL.mx,RUL.my);RUL.hover=h?rulSnap(h.point):null;dirty=true;}
+  if(dirty){dirty=false;try{rulerDraw();R.render(S,cam);placeLabels();}catch(err){console.warn(err);}}}
 
 // ---------- start
 readBg();
 let start=location.hash.slice(1),startNight=false;
-if(SHOT){start=start.slice(5);if(/~night$/.test(start)){startNight=true;start=start.slice(0,-6);}const v=VIEWS[start]||VIEWS.obzor;
-  $('cap').innerHTML=v.name+(startNight?' · ночь':'')+(v.sub&&!startNight?'<small>'+v.sub+'</small>':'');}
+let shotPal='';
+if(SHOT){start=start.slice(5);
+  // #shot-<view>~pal-W-F-K renders with finish variant W for walls, F for the floor, K for the fronts (indexes into PAL)
+  const pm=start.match(/~pal-(\d+)-(\d+)-(\d+)/);if(pm){start=start.replace(pm[0],'');['wall','floor','front'].forEach((k,i)=>{if(PAL[k].o[+pm[i+1]])palSel[k]=+pm[i+1];});applyPal();
+    shotPal=['wall','floor','front'].map(k=>PAL[k].o[palSel[k]].n).join(' · ');}
+  if(/~night$/.test(start)){startNight=true;start=start.slice(0,-6);}const v=VIEWS[start]||VIEWS.obzor;
+  $('cap').innerHTML=v.name+(startNight?' · ночь':'')+(shotPal?'<small>'+shotPal+'</small>':v.sub&&!startNight?'<small>'+v.sub+'</small>':'');}
 {const v0=VIEWS[start];if(v0&&v0.off)v0.off.forEach(k=>{SW[k]=0;});if(v0&&v0.night)startNight=true;}
 collectNight();applyLights();if(startNight)setNight(true);
 if(!VIEWS[start])start='obzor';

@@ -107,12 +107,15 @@ let seed = 11; const rnd = () => { seed = (seed*16807) % 2147483647; return (see
 function tex(w,h,draw){const c=document.createElement('canvas');c.width=w;c.height=h;draw(c.getContext('2d'),w,h);
   const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.encoding=THREE.sRGBEncoding;t.anisotropy=8;return t;}
 function rep(t,rx,ry){const c=t.clone();c.needsUpdate=true;c.wrapS=c.wrapT=THREE.RepeatWrapping;c.repeat.set(rx,ry);return c;}
-function lam(g,w,h){const rows=12,rh=h/rows;for(let i=0;i<rows;i++){const off=(i*197)%512;
-  for(let x=-off;x<w;x+=512){g.fillStyle=`hsl(${32+rnd()*5},${32+rnd()*10}%,${73+rnd()*7}%)`;g.fillRect(x,i*rh,512,rh);
-    for(let k=0;k<14;k++){g.strokeStyle=`rgba(120,85,50,${0.04+rnd()*0.06})`;g.lineWidth=1+rnd()*1.5;const y=i*rh+rnd()*rh;
-      g.beginPath();g.moveTo(x,y);g.bezierCurveTo(x+170,y+(rnd()-.5)*8,x+340,y+(rnd()-.5)*8,x+512,y+(rnd()-.5)*6);g.stroke();}
-    g.fillStyle='rgba(110,80,50,.35)';g.fillRect(x,i*rh,2,rh);}
-  g.fillStyle='rgba(110,80,50,.3)';g.fillRect(0,i*rh,w,2);}}
+// laminate boards in a tone: hue, saturation and lightness as [from, spread], grain and seam colours as 'r,g,b'; r is the random source
+const LAM0={h:[32,5],s:[32,10],l:[73,7],grain:'120,85,50',seam:'110,80,50'};
+function lamTone(t,r){return (g,w,h)=>{const rows=12,rh=h/rows;for(let i=0;i<rows;i++){const off=(i*197)%512;
+  for(let x=-off;x<w;x+=512){g.fillStyle=`hsl(${t.h[0]+r()*t.h[1]},${t.s[0]+r()*t.s[1]}%,${t.l[0]+r()*t.l[1]}%)`;g.fillRect(x,i*rh,512,rh);
+    for(let k=0;k<14;k++){g.strokeStyle=`rgba(${t.grain},${0.04+r()*0.06})`;g.lineWidth=1+r()*1.5;const y=i*rh+r()*rh;
+      g.beginPath();g.moveTo(x,y);g.bezierCurveTo(x+170,y+(r()-.5)*8,x+340,y+(r()-.5)*8,x+512,y+(r()-.5)*6);g.stroke();}
+    g.fillStyle=`rgba(${t.seam},.35)`;g.fillRect(x,i*rh,2,rh);}
+  g.fillStyle=`rgba(${t.seam},.3)`;g.fillRect(0,i*rh,w,2);}};}
+const lam=lamTone(LAM0,()=>rnd());
 function tileDraw(base,grout){return (g,w,h)=>{g.fillStyle=base;g.fillRect(0,0,w,h);
   for(let i=0;i<3000;i++){g.fillStyle=`rgba(${rnd()<.5?255:140},${rnd()<.5?255:140},150,.05)`;g.fillRect(rnd()*w,rnd()*h,2,2);}
   g.fillStyle=grout;g.fillRect(0,0,w,3);g.fillRect(0,0,3,h);};}
@@ -129,15 +132,16 @@ const marbleT=tex(1024,512,marbleDraw);
 const M=(c,r=0.8,m=0,x={})=>new THREE.MeshStandardMaterial(Object.assign({color:c,roughness:r,metalness:m},x));
 const clip=new THREE.Plane(new THREE.Vector3(0,-1,0),CUT);
 const mat={
-  wall:M('#e8e2d8',0.95), ceil:M('#f8f7f4',0.6), capOld:M('#2e2c29',0.9), capNew:M('#b5562f',0.85),
+  // project finishes as real codes: walls NCS S 1002-Y50R; kitchen base RAL 7021, wall cabinets and wardrobes RAL 9001, TV stand RAL 7022
+  wall:M('#E6DDD8',0.95), ceil:M('#f8f7f4',0.6), capOld:M('#2e2c29',0.9), capNew:M('#b5562f',0.85),
   pvc:M('#f6f6f4',0.35), glass:new THREE.MeshStandardMaterial({color:'#d6e6ee',roughness:0.05,metalness:0.1,transparent:true,opacity:0.2,depthWrite:false,side:THREE.DoubleSide}),
-  graph:M('#2b2b2e',0.55), plinth:M('#1d1d1f',0.8), black:M('#161616',0.35,0.3), chrome:M('#d4d7da',0.2,0.9), steel:M('#b4b8bb',0.3,0.75),
-  upper:M('#ebe6dc',0.45), upperC:M('#d8d2c6',0.6), panel:M('#3b3b3f',0.6), appl:M('#efefec',0.35), fridge:M('#f1f1ee',0.3),
+  graph:M('#2E3234',0.55), plinth:M('#1d1d1f',0.8), black:M('#161616',0.35,0.3), chrome:M('#d4d7da',0.2,0.9), steel:M('#b4b8bb',0.3,0.75),
+  upper:M('#EFEBDC',0.45), upperC:M('#d8d2c6',0.6), panel:M('#2E3234',0.6), appl:M('#efefec',0.35), fridge:M('#f1f1ee',0.3),
   woodL:M('#d8bb92',0.55), wood:M('#c49a68',0.6), oak:M('#b88a5a',0.6),
   sofa:M('#9fb0bd',0.95), sofaD:M('#8a9cab',0.95), rug:M('#e2d8c7',1), linen:M('#ece5d9',0.95,0,{side:THREE.DoubleSide}),
   bedBase:M('#cbb698',0.9), sheet:M('#f5f3ef',0.95), duvet:M('#dccfba',0.95), head:M('#6e5b49',0.9), throwM:M('#b8714f',0.95),
-  ward:M('#efe9df',0.5), wardC:M('#e1dacd',0.6), ceramic:M('#fbfbfa',0.12), seat:M('#d9c7ab',0.9), back:M('#a88d6a',0.85),
-  tv:M('#0c0d0f',0.25,0.2), tvStand:M('#46403a',0.6), door:M('#f3f0ea',0.45), doorEnt:M('#5a534c',0.5),
+  ward:M('#EFEBDC',0.5), wardC:M('#e1dacd',0.6), ceramic:M('#fbfbfa',0.12), seat:M('#d9c7ab',0.9), back:M('#a88d6a',0.85),
+  tv:M('#0c0d0f',0.25,0.2), tvStand:M('#4B4D46',0.6), door:M('#f3f0ea',0.45), doorEnt:M('#5a534c',0.5),
   green:M('#5f7f4f',0.8), greenD:M('#486a3c',0.8), pot:M('#cfc6b8',0.7), hobGlass:M('#121212',0.1,0.3),
   led:M('#ffffff',0.5,0,{emissive:'#fff1d6',emissiveIntensity:1}), shade:M('#f3ead8',0.8,0,{emissive:'#ffe1ad',emissiveIntensity:0.55,side:THREE.DoubleSide}),
   bulb:M('#ffffff',0.4,0,{emissive:'#fff2d8',emissiveIntensity:1.2}), mirror:M('#d3dde1',0.06,0.15),
@@ -186,8 +190,9 @@ function wallSeg(ax,az,bx,bz,th,y1,y2,isNew){seg(ax,az,bx,bz,th,y1,y2,mat.wall,{
   caps((a,b,cm,p)=>seg(ax,az,bx,bz,th+0.002,a,b,cm,{p,cast:false}),y1,y2,isNew);}
 
 // ---------- floors
-plane(0,6.58,0,5.5,0,new THREE.MeshStandardMaterial({map:rep(lamT,6.58/2.4,5.5/2.4),roughness:0.55}));
-plane(0.6,1.62,5.5,5.75,0,mat.wall);
+const floorM=new THREE.MeshStandardMaterial({map:rep(lamT,6.58/2.4,5.5/2.4),roughness:0.55});
+plane(0,6.58,0,5.5,0,floorM);
+plane(0.6,1.62,5.5,5.75,0,M('#e8e2d8',0.95));
 const tileM=(w,d)=>new THREE.MeshStandardMaterial({map:rep(floorTileT,w/0.3,d/0.3),roughness:0.3});
 plane(1.62,4.365,4.375,5.5,0.002,tileM(2.745,1.125));
 plane(4.365,6.58,3.565,5.5,0.002,tileM(2.215,1.935));
